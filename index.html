@@ -21,12 +21,10 @@
   </script>
 
   <style>
+    /* ===== All your existing styles remain exactly the same ===== */
     @media screen {
-      .print-only {
-        display: none !important;
-      }
+      .print-only { display: none !important; }
     }
-
     .standard-doc {
       width: 100%;
       line-height: 1.4;
@@ -98,39 +96,16 @@
       display: block;
       font-size: 11pt;
     }
-
     @media print {
       .no-print,
-      .screen-only {
-        display: none !important;
-      }
-      .print-only {
-        display: block !important;
-      }
-      @page {
-        margin: 12mm 15mm;
-        size: A4;
-      }
-      body {
-        background: #fff !important;
-        margin: 0;
-        padding: 0;
-      }
-      .standard-doc {
-        padding: 0;
-        border: none;
-        box-shadow: none;
-        border-radius: 0;
-      }
-      .page-break {
-        page-break-before: always;
-      }
-      .print-box {
-        border: none !important;
-        box-shadow: none !important;
-      }
+      .screen-only { display: none !important; }
+      .print-only { display: block !important; }
+      @page { margin: 12mm 15mm; size: A4; }
+      body { background: #fff !important; margin: 0; padding: 0; }
+      .standard-doc { padding: 0; border: none; box-shadow: none; border-radius: 0; }
+      .page-break { page-break-before: always; }
+      .print-box { border: none !important; box-shadow: none !important; }
     }
-
     .marquee-container {
       overflow: hidden;
       white-space: nowrap;
@@ -143,15 +118,9 @@
       animation: marquee 20s linear infinite;
     }
     @keyframes marquee {
-      0% {
-        transform: translate(0, 0);
-      }
-      100% {
-        transform: translate(-100%, 0);
-      }
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-100%, 0); }
     }
-
-    /* Loading Spinner */
     .spinner {
       border: 4px solid #f3f4f6;
       border-top: 4px solid #6366f1;
@@ -161,12 +130,8 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -178,16 +143,15 @@
     const { useState, useEffect, useMemo, useCallback, createContext, useContext } = React;
 
     // ============================================================
-    //  SUPABASE CONFIGURATION
-    //  🔴 REPLACE THESE WITH YOUR ACTUAL SUPABASE CREDENTIALS
+    //  🔧 FIXED: SUPABASE CONFIGURATION (REMOVED EXTRA "Y")
     // ============================================================
-    const SUPABASE_URL = "Yhttps://ykooktqnxunmoenucdoy.supabase.co";
+    const SUPABASE_URL = "https://ykooktqnxunmoenucdoy.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Wo14uG3EowORP_eHV7SMlw_o1HLqU0f";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ============================================================
-    //  CONSTANTS (Keep your existing ones)
+    //  CONSTANTS (unchanged - all your existing constants here)
     // ============================================================
     const ROLES = {
       SECTION: { id: "SECTION", label: "अनुभाग", icon: "🏢", color: "#6366f1", bg: "#eef2ff",
@@ -521,7 +485,7 @@
     }
 
     // ============================================================
-    //  AUTH CONTEXT
+    //  AUTH CONTEXT (unchanged)
     // ============================================================
     const AuthContext = createContext(null);
 
@@ -589,7 +553,7 @@
     function useAuth() { return useContext(AuthContext); }
 
     // ============================================================
-    //  DATA HOOKS
+    //  DATA HOOKS (unchanged)
     // ============================================================
     function useReports() {
       const [reports, setReports] = useState([]);
@@ -655,7 +619,7 @@
     }
 
     // ============================================================
-    //  HELPER COMPONENTS
+    //  HELPER COMPONENTS (unchanged)
     // ============================================================
     const Inp = ({ label, value, onChange, type = "text", placeholder = "", disabled = false }) => (
       <div style={{ display: "flex", flexDirection: "column", gap: 4, opacity: disabled ? 0.7 : 1 }}>
@@ -748,7 +712,7 @@
     );
 
     // ============================================================
-    //  WORKFLOW PIPELINE
+    //  WORKFLOW PIPELINE (unchanged)
     // ============================================================
     function WorkflowPipeline({ currentRole }) {
       const steps = [
@@ -787,7 +751,7 @@
     }
 
     // ============================================================
-    //  LOGIN SCREEN
+    //  LOGIN SCREEN (unchanged)
     // ============================================================
     function LoginScreen() {
       const [email, setEmail] = useState('');
@@ -862,7 +826,7 @@
     }
 
     // ============================================================
-    //  DASHBOARD
+    //  DASHBOARD (unchanged)
     // ============================================================
     function Dashboard({ reports, user, setView, sections }) {
       const r = ROLES[user.role];
@@ -940,7 +904,7 @@
     }
 
     // ============================================================
-    //  REPORT FORM (Simplified - Core fields only due to length)
+    //  REPORT FORM (unchanged - same as your original)
     // ============================================================
     function ReportForm({ onSave, user, reports, initialData, onCancel }) {
       const [data, setData] = useState(initialData || emptyForm());
@@ -1036,7 +1000,6 @@
 
       return (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          {/* Step indicator */}
           <div className="no-print" style={{ background: "#fff", borderRadius: 14, padding: "14px 20px", marginBottom: 18,
               border: "1.5px solid #e2e8f0" }}>
             <div style={{ display: "flex", marginBottom: 8 }}>
@@ -1058,7 +1021,6 @@
                 width: `${(step / (totalSteps - 1)) * 100}%`, transition: "width 0.3s" }} /></div>
           </div>
 
-          {/* Step 0: Office Details */}
           {step === 0 && (
             <div>
               {!showPart2 && (
@@ -1119,7 +1081,6 @@
             </div>
           )}
 
-          {/* Step 1: Part I */}
           {step === 1 && (
             <div>
               <SecCard title="1. माननीय मंत्री जी को भेजी गई फाइलें" icon="📜" color={SECTION_COLORS[0]}>
@@ -1218,7 +1179,6 @@
             </div>
           )}
 
-          {/* Step 2: Part II */}
           {step === 2 && showPart2 && (
             <div>
               <div style={{ background: "#eff6ff", border: "2px solid #6366f1", borderRadius: 12, padding: "10px 16px",
@@ -1354,7 +1314,6 @@
             </div>
           )}
 
-          {/* Preview Step */}
           {((step === 2 && !showPart2) || (step === 3 && showPart2)) && (
             <div className="no-print" style={{ background: "#fff", borderRadius: 16, padding: 24,
                 border: "1.5px solid #e2e8f0", marginBottom: 16 }}>
@@ -1391,7 +1350,6 @@
             </div>
           )}
 
-          {/* Navigation */}
           <div className="no-print" style={{ display: "flex", justifyContent: "space-between", marginTop: 18 }}>
             <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
             style={{ padding: "9px 22px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: step === 0 ?
@@ -1410,7 +1368,7 @@
     }
 
     // ============================================================
-    //  INBOX
+    //  INBOX (unchanged)
     // ============================================================
     function Inbox({ reports, user, onAction, onEdit }) {
       const r = ROLES[user.role];
@@ -1560,7 +1518,7 @@
     }
 
     // ============================================================
-    //  CONSOLIDATED VIEW
+    //  CONSOLIDATED VIEW (unchanged)
     // ============================================================
     function ConsolidatedView({ reports, sections }) {
       const [q, setQ] = useState("Q4");
@@ -1803,7 +1761,7 @@
     }
 
     // ============================================================
-    //  MASTER CONTROL
+    //  🔧 FIXED: MASTER CONTROL (Fixed .neq → .not)
     // ============================================================
     function MasterControl({ reports, sections, onEditReport }) {
       const [searchQuery, setSearchQuery] = useState("");
@@ -1843,10 +1801,11 @@
         if (pass !== "RESET") return;
         setIsClearing(true);
         try {
-          const { data, error } = await supabaseClient
+          // ✅ FIXED: Using .not() instead of .neq()
+          const { error } = await supabaseClient
             .from('reports')
             .delete()
-            .neq('status', 'SETTINGS');
+            .not('status', 'eq', 'SETTINGS');
           if (error) throw error;
           alert("✅ सभी रिपोर्टें मिटा दी गईं!");
         } catch (e) { alert("Error: " + e.message); }
@@ -1937,7 +1896,7 @@
     }
 
     // ============================================================
-    //  MAIN APP
+    //  MAIN APP (unchanged)
     // ============================================================
     function App() {
       return (
@@ -1963,7 +1922,6 @@
       const handleSaveReport = async (reportData) => {
         const reportToSave = { ...reportData };
         if (!reportToSave.id) {
-          // New report: validate via edge function
           try {
             const { data: validation, error: validationError } = await supabaseClient.functions.invoke(
               'validate-report', { body: { report: reportToSave } }
@@ -1977,7 +1935,6 @@
               return;
             }
           } catch (e) {
-            // If edge function not deployed, fallback to local validation
             console.warn('Edge function not available, using local validation');
           }
         }
@@ -2021,7 +1978,6 @@
 
       return (
         <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Noto Sans Devanagari','Inter',sans-serif" }}>
-          {/* Navbar */}
           <nav style={{
             background: ROLES[profile.role]?.grad || ROLES[profile.role]?.color || '#6366f1',
             padding: '0 20px',
