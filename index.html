@@ -188,31 +188,28 @@
 
     const AuthContext = createContext(null);
 
-    function AuthProvider({ children }) {
-      const [user, setUser] = useState(null);
-      const [profile, setProfile] = useState(null);
-      const [loading, setLoading] = useState(true);
-
-      const fetchProfile = useCallback(async (userId) => {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-          if (!error && data) {
-            setProfile(data);
-          } else {
-            console.error("Profile lookup error. Rows might be missing:", error);
-            alert("डेटाबेस प्रोफाइल एरर: कृपया जांचें कि 'profiles' टेबल में इस यूजर की रो मौजूद है।");
-          }
-        } catch (e) {
-          console.error("Exception fetching profile:", e);
-        } finally {
-          setLoading(false); // Ensure app rendering unblocks
-        }
-      }, []);
-
+   const fetchProfile = useCallback(async (userId) => {
+  try {
+    console.log("Fetching profile for UID:", userId); // डिबग लाइन
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      console.error("Supabase Error Details:", error.message, error.details, error.hint);
+      alert(`प्रोफ़ाइल नहीं मिली! त्रुटि विवरण: ${error.message}`);
+    } else if (data) {
+      console.log("Profile loaded successfully:", data);
+      setProfile(data);
+    }
+  } catch (e) {
+    console.error("Exception in fetchProfile:", e);
+  } finally {
+    setLoading(false);
+  }
+}, []);
       useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session) {
