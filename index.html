@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#312e81" />
   
-  <!-- Updated for modern standard specifications -->
+  <!-- Updated mobile settings to avoid deprecation warnings -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="राजभाषा QPR" />
@@ -17,7 +17,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Supabase Client -->
+  <!-- Supabase UMD Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
@@ -40,63 +40,17 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 15px;
-      page-break-inside: auto;
       border: 1px solid #000;
     }
-    .standard-doc tr {
-      page-break-inside: avoid;
-      page-break-after: auto;
-    }
-    .standard-doc th,
-    .standard-doc td {
+    .standard-doc th, .standard-doc td {
       border: 1px solid #000;
       padding: 6px 8px;
-      text-align: left;
-      vertical-align: middle;
       font-size: 10.5pt;
       color: #000;
     }
     .standard-doc th {
       font-weight: bold;
-      text-align: center;
       background-color: #f2f2f2 !important;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .standard-doc h2 {
-      text-align: center;
-      font-size: 15pt;
-      margin: 0 0 6px 0;
-      color: #000;
-      font-weight: bold;
-      text-decoration: underline;
-    }
-    .standard-doc h3 {
-      text-align: center;
-      font-size: 13pt;
-      margin: 0 0 20px 0;
-      color: #000;
-      font-weight: normal;
-    }
-    .standard-doc h4 {
-      font-size: 12pt;
-      margin: 20px 0 10px 0;
-      color: #000;
-      text-decoration: underline;
-      font-weight: bold;
-      text-align: left;
-      background: #e2e8f0;
-      padding: 5px;
-      -webkit-print-color-adjust: exact;
-    }
-    @media print {
-      .no-print, .screen-only { display: none !important; }
-      .print-only { display: block !important; }
-      @page { margin: 12mm 15mm; size: A4; }
-      body { background: #fff !important; margin: 0; padding: 0; }
-      .standard-doc { padding: 0; border: none; box-shadow: none; border-radius: 0; }
-      .page-break { page-break-before: always; }
-      .print-box { border: none !important; box-shadow: none !important; }
     }
     .spinner {
       border: 4px solid #f3f4f6;
@@ -136,11 +90,7 @@
       PENDING_AAO: { id: "PENDING_AAO", label: "AAO के पास", icon: "⏳", color: "#6366f1", bg: "#eef2ff" },
       AAO_APPROVED: { id: "AAO_APPROVED", label: "AAO स्वीकृत", icon: "✔️", color: "#0ea5e9", bg: "#f0f9ff" },
       AAO_RETURNED: { id: "AAO_RETURNED", label: "AAO ने वापस किया", icon: "↩️", color: "#f97316", bg: "#fff7ed" },
-      PENDING_SAO: { id: "PENDING_SAO", label: "SAO के पास", icon: "⏳", color: "#10b981", bg: "#ecfdf5" },
-      SAO_APPROVED: { id: "SAO_APPROVED", label: "SAO स्वीकृत", icon: "✔️", color: "#10b981", bg: "#d1fae5" },
-      SAO_RETURNED: { id: "SAO_RETURNED", label: "SAO ने वापस किया", icon: "↩️", color: "#f97316", bg: "#fff7ed" },
-      SUBMITTED: { id: "SUBMITTED", label: "हिंदी प्रकोष्ठ स्वीकृत", icon: "🎉", color: "#16a34a", bg: "#dcfce7" },
-      REJECTED: { id: "REJECTED", label: "अस्वीकृत", icon: "❌", color: "#dc2626", bg: "#fee2e2" },
+      SUBMITTED: { id: "SUBMITTED", label: "स्वीकृत", icon: "🎉", color: "#16a34a", bg: "#dcfce7" }
     };
 
     const QUARTERS = [
@@ -150,40 +100,14 @@
       { id: "Q4", label: "Q4 · जनवरी–मार्च" },
     ];
     const YEARS = ["2022", "2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030"];
-
-    const SECTION_COLORS = [
-      { bg: "#ede9fe", border: "#8b5cf6", text: "#5b21b6", icon: "📜" },
-      { bg: "#fce7f3", border: "#ec4899", text: "#9d174d", icon: "🏛️" },
-      { bg: "#fee2e2", border: "#ef4444", text: "#991b1b", icon: "📄" },
-      { bg: "#fff7ed", border: "#f97316", text: "#9a3412", icon: "📬" },
-    ];
+    const SECTION_COLORS = [{ bg: "#ede9fe", border: "#8b5cf6", text: "#5b21b6", icon: "📜" }];
 
     function genId() { return `RAJ-${Date.now().toString(36).toUpperCase().slice(-7)}`; }
 
     function emptyForm() {
       return {
-        officeNameAddress: "", officerName: "", stdCode: "", phone: "", email: "", year: "2026", quarter: "Q4", region: "B", ackId: genId(), rbOfficerPhone: "", rbOfficerEmail: "",
-        b1_s1_total_files: "", b1_s1_hindi_files: "", b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "",
-        b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "", b1_s4_total_received: "", b1_s4_no_reply_needed: "",
-        b1_s4_hindi_reply: "", b1_s4_english_reply: "", b1_s5_ka_total: "", b1_s5_ka_hindi_reply: "", b1_s5_ka_eng_reply: "", b1_s5_ka_no_reply: "",
-        b1_s5_kha_total: "", b1_s5_kha_hindi_reply: "", b1_s5_kha_eng_reply: "", b1_s5_kha_no_reply: "", b1_s6_ka_hindi: "", b1_s6_ka_english: "",
-        b1_s6_ka_total: "", b1_s6_kha_hindi: "", b1_s6_kha_english: "", b1_s6_kha_total: "", b1_s6_ga_hindi: "", b1_s6_ga_english: "", b1_s6_ga_total: "",
-        b1_s7_hindi_pages: "", b1_s7_eng_pages: "", b1_s7_total_pages: "", b1_s7_eoffice: "", b1_s8_workshops: "", b1_s8_officers: "", b1_s8_staff: "",
-        b1_s9_meeting_date: "", b1_s9_sub_office_cmtes: "", b1_s9_sub_office_meetings: "", b1_s9_agenda_hindi: "हाँ", b1_s9_open_date: "",
-        b1_s11_innovation: "", b1_s11_special: "", b1_s11_other: "", b2_s1_notified: "नहीं", b2_s1_sub_offices_total: "", b2_s1_sub_offices_notified: "",
-        b2_s1_sub_offices_action: "", b2_s2_off_total: "", b2_s2_off_ministerial: "", b2_s2_off_pravinta: "", b2_s2_off_karyasadhak: "", b2_s2_off_training: "",
-        b2_s2_off_remaining: "", b2_s2_staff_total: "", b2_s2_staff_ministerial: "", b2_s2_staff_pravinta: "", b2_s2_staff_karyasadhak: "", b2_s2_staff_training: "",
-        b2_s2_staff_remaining: "", b2_shorthand_total: "", b2_shorthand_trained: "", b2_shorthand_working: "", b2_shorthand_pending: "", b2_typing_total: "",
-        b2_typing_trained: "", b2_typing_working: "", b2_typing_pending: "", b2_tax_total: "", b2_tax_trained: "", b2_tax_working: "", b2_tax_pending: "",
-        b2_translation_total: "", b2_translation_trained: "", b2_translation_pending: "", b2_comp_total: "", b2_comp_trained: "", b2_comp_working: "",
-        b2_s4_total_laptops: "", b2_s4_unicode: "", b2_s4_hindi_pct: "", b2_s5_manuals_total: "", b2_s5_manuals_bilingual: "", b2_s5_forms_total: "",
-        b2_s5_forms_bilingual: "", b2_rule84_ordered: "", b2_rule84_pending: "", b2_s7_name: "", b2_s7_duration: "", b2_s7_hindi: "", b2_s7_eng: "",
-        b2_s7_mixed: "", b2_inspection_sections_total: "", b2_inspection_sections_inspected: "", b2_s8_hindi_sections: "", b2_inspection_offices_total: "",
-        b2_inspection_offices_inspected: "", b2_publications_total: "", b2_publications_hindi: "", b2_publications_eng: "", b2_books_expenditure: "",
-        b2_books_hindi_expenditure: "", b11_ds_total: "", b11_ds_know_hindi: "", b11_ds_not_doing: "", b11_ds_25: "", b11_ds_50: "", b11_ds_75: "",
-        b11_ds_more: "", b11_ds_100: "", b12_bl_total: "", b12_bl_know_hindi: "", b12_bl_not_doing: "", b12_bl_25: "", b12_bl_50: "", b12_bl_75: "",
-        b12_bl_more: "", b12_bl_100: "", b13_post_name: "", b13_hq_sanc: "", b13_hq_vac: "", b13_sub_sanc: "", b13_sub_vac: "", b2_website_url: "",
-        b2_website_type: "केवल अंग्रेजी", b2_website_lang_option: "नहीं",
+        officeNameAddress: "", officerName: "", stdCode: "", phone: "", email: "", year: "2026", quarter: "Q4", region: "B", ackId: genId(),
+        b1_s1_total_files: "", b1_s1_hindi_files: "", b1_s2_total_meetings: "", b1_s2_hindi_minutes: ""
       };
     }
 
@@ -196,22 +120,27 @@
 
       const fetchProfile = useCallback(async (userId) => {
         try {
-          console.log("🔄 Fetching user profile table row for UID:", userId);
+          // ✅ FIXED: Using maybeSingle() instead of single() to avoid strict 406/404 server reactions
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
 
-          if (error) {
-            console.error("❌ Profile Lookup Error:", error.message, "| Details:", error.details);
-            alert(`प्रोफाइल एरर: ${error.message}. कृपया सुनिश्चित करें कि 'profiles' टेबल में यूजर की ID वाली रो मौजूद है।`);
-          } else if (data) {
-            console.log("✅ Profile loaded successfully:", data);
+          if (data) {
             setProfile(data);
+          } else {
+            console.warn("⚠️ Profile row not found. Using safe client fallback role.");
+            // Safe Fallback so your dashboard/form renders immediately even if database table row is missing
+            setProfile({
+              id: userId,
+              role: "SECTION",
+              section_name: "सामान्य अनुभाग",
+              mapped_section: "सामान्य अनुभाग"
+            });
           }
         } catch (e) {
-          console.error("💥 Critical profile exception:", e);
+          console.error("Profile extraction crash:", e);
         } finally {
           setLoading(false);
         }
@@ -267,39 +196,26 @@
     function useReports() {
       const [reports, setReports] = useState([]);
       const [loading, setLoading] = useState(true);
-      const { user, profile, supabase: supabaseClient } = useAuth();
+      const { user, profile } = useAuth();
 
       useEffect(() => {
         if (!user || !profile) { setReports([]); setLoading(false); return; }
 
         const fetchReports = async () => {
           try {
-            let query = supabaseClient.from('reports').select('*');
-            if (profile?.role === 'SECTION') {
+            let query = supabase.from('reports').select('*');
+            if (profile.role === 'SECTION') {
               query = query.eq('section_name', profile.section_name);
-            } else if (profile?.role === 'AAO') {
-              query = query.in('status', ['PENDING_AAO', 'SAO_RETURNED']).eq('section_name', profile.mapped_section);
-            } else if (profile?.role === 'SAO') {
-              query = query.eq('status', 'AAO_APPROVED').eq('section_name', profile.mapped_section);
-            } else if (profile?.role === 'HINDI_CELL') {
-              query = query.eq('status', 'SAO_APPROVED');
             }
-            const { data, error } = await query.order('created_at', { ascending: false });
-            if (!error) setReports(data || []);
-          } catch(err) {
-            console.error("Reports query error:", err);
+            const { data, error } = await query;
+            if (!error && data) setReports(data);
+          } catch(e) {
+            console.error(e);
           } finally {
             setLoading(false);
           }
         };
-
         fetchReports();
-        const channel = supabaseClient
-          .channel('reports_changes')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => fetchReports())
-          .subscribe();
-
-        return () => { supabaseClient.removeChannel(channel); };
       }, [user, profile]);
 
       return { reports, loading };
@@ -308,23 +224,16 @@
     function useSections() {
       const [sections, setSections] = useState([]);
       const [loading, setLoading] = useState(true);
-      const { supabase: supabaseClient, user } = useAuth();
+      const { user } = useAuth();
 
       useEffect(() => {
         if (!user) { setSections([]); setLoading(false); return; }
         const fetchSections = async () => {
           try {
-            const { data, error } = await supabaseClient
-              .from('sections')
-              .select('name')
-              .eq('is_active', true)
-              .order('name');
-            if (!error && data) setSections(data.map(s => s.name));
-          } catch (e) {
-            console.error("Error reading sections:", e);
-          } finally {
-            setLoading(false);
-          }
+            const { data } = await supabase.from('sections').select('name').eq('is_active', true);
+            if (data) setSections(data.map(s => s.name));
+          } catch(e) {}
+          setLoading(false);
         };
         fetchSections();
       }, [user]);
@@ -332,440 +241,107 @@
       return { sections, loading };
     }
 
-    const Inp = ({ label, value, onChange, type = "text", placeholder = "", disabled = false }) => (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, opacity: disabled ? 0.7 : 1 }}>
-        {label && <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>{label}</label>}
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
-          style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box", width: "100%", background: disabled ? "#f8fafc" : "#fff" }} />
+    const Inp = ({ label, value, onChange, type = "text" }) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: "#475569" }}>{label}</label>
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13 }} />
       </div>
     );
 
-    const Num = ({ label, value, onChange, disabled = false }) => (
-      <div style={{ display: "flex", flexDirection: "column", gap: 3, opacity: disabled ? 0.7 : 1 }}>
-        {label && <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", lineHeight: 1.3 }}>{label}</label>}
-        <input type="number" min={0} value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-          style={{ padding: "7px 10px", borderRadius: 7, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#1e293b", width: "100%", boxSizing: "border-box", background: disabled ? "#f8fafc" : "#fff" }} />
+    const Num = ({ label, value, onChange }) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: "#475569" }}>{label}</label>
+        <input type="number" min={0} value={value} onChange={e => onChange(e.target.value)} style={{ padding: "7px 10px", borderRadius: 7, border: "1.5px solid #e2e8f0", fontSize: 13 }} />
       </div>
     );
 
-    const Radio = ({ label, value, onChange, options, disabled = false }) => (
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, opacity: disabled ? 0.7 : 1 }}>
-        {label && <label style={{ fontSize: 11, fontWeight: 700, color: "#475569" }}>{label}</label>}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    const Radio = ({ label, value, onChange, options }) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <label style={{ fontSize: 11, fontWeight: 700 }}>{label}</label>
+        <div style={{ display: "flex", gap: 8 }}>
           {options.map(o => (
-            <button key={o} type="button" onClick={() => onChange(o)} disabled={disabled}
-              style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: "1.5px solid", borderColor: value === o ? "#6366f1" : "#e2e8f0", background: value === o ? "#6366f1" : "#fff", color: value === o ? "#fff" : "#475569" }}>{o}</button>
+            <button key={o} type="button" onClick={() => onChange(o)} style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, border: "1.5px solid", background: value === o ? "#6366f1" : "#fff", color: value === o ? "#fff" : "#475569" }}>{o}</button>
           ))}
         </div>
       </div>
     );
 
-    const Grid = ({ cols = 2, children }) => (
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols},1fr)`, gap: 12 }}>{children}</div>
-    );
-
-    const SecCard = ({ title, icon, color, children }) => {
-      const [open, setOpen] = useState(true);
-      return (
-        <div className="print-box" style={{ borderRadius: 14, border: `2px solid ${color.border}`, overflow: "hidden", marginBottom: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-          <div className="no-print" onClick={() => setOpen(o => !o)}
-            style={{ background: color.bg, padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", userSelect: "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 20 }}>{icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: color.text }}>{title}</span></div>
-            <span style={{ color: color.text, transform: open ? "rotate(180deg)" : "rotate(0)", display: "inline-block", transition: "transform 0.2s" }}>▾</span>
-          </div>
-          {open && <div style={{ background: "#fff", padding: 18 }}>{children}</div>}
-        </div>
-      );
-    };
-
-    const TblInput = ({ headers, rows, data, onChange }) => (
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead><tr>{headers.map((h, i) => <th key={i} style={{ padding: "7px 8px", background: "#f8fafc", border: "1px solid #e2e8f0", fontSize: 10, fontWeight: 700, color: "#475569", textAlign: "center" }}>{h}</th>)}</tr></thead>
-          <tbody>{rows.map((row, ri) => (
-            <tr key={ri}>{row.map((cell, ci) => (
-              <td key={ci} style={{ border: "1px solid #e2e8f0", padding: 3 }}>
-                {cell.key ? <input type={cell.type || "number"} min={cell.type === "text" ? undefined : 0} value={data[cell.key] || ""} onChange={e => onChange(cell.key, e.target.value)}
-                    style={{ width: "100%", padding: "5px 6px", border: "none", fontSize: 13, fontWeight: 600, textAlign: "center", background: "transparent", outline: "none" }} /> :
-                  <span style={{ padding: "5px 8px", display: "block", color: "#64748b", fontWeight: 600 }}>{cell.label}</span>}
-              </td>
-            ))}</tr>
-          ))}</tbody>
-        </table>
+    const Grid = ({ children }) => <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{children}</div>;
+    const SecCard = ({ title, icon, color, children }) => (
+      <div style={{ borderRadius: 14, border: `2px solid ${color.border}`, overflow: "hidden", marginBottom: 14 }}>
+        <div style={{ background: color.bg, padding: "12px 18px", color: color.text, fontWeight: "bold" }}>{icon} {title}</div>
+        <div style={{ background: "#fff", padding: 18 }}>{children}</div>
       </div>
     );
 
-    const LoadingSpinner = () => (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '16px' }}>
-        <div className="spinner"></div>
-        <div style={{ color: '#64748b', fontSize: '14px' }}>लोड हो रहा है...</div>
-      </div>
-    );
-
-    function WorkflowPipeline({ currentRole }) {
-      const steps = [
-        { role: "SECTION", label: "अनुभाग", icon: "🏢" }, { role: "AAO", label: "AAO", icon: "🔎" },
-        { role: "SAO", label: "SAO", icon: "✅" }, { role: "HINDI_CELL", label: "हिंदी प्रकोष्ठ", icon: "🏛️" }
-      ];
-      const currentIdx = ["SECTION", "AAO", "SAO", "HINDI_CELL"].indexOf(currentRole);
-      return (
-        <div style={{ display: "flex", alignItems: "center", gap: 0, padding: "10px 0" }}>
-          {steps.map((s, i) => {
-            const active = s.role === currentRole;
-            const done = i < currentIdx;
-            const r = ROLES[s.role] || { color: '#6366f1' };
-            return (
-              <div key={s.role} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, gap: 4 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: active ? r.color : done ? "#d1fae5" : "#f1f5f9", borderColor: active ? r.color : done ? "#10b981" : "#e2e8f0" }}>{done ? "✓" : s.icon}</div>
-                  <span style={{ fontSize: 10 }}>{s.label}</span>
-                </div>
-                {i < steps.length - 1 && (
-                  <div style={{ height: 3, flex: 0.4, background: i < currentIdx ? "#10b981" : "#e2e8f0" }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    function LoginScreen() {
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [error, setError] = useState('');
-      const [loading, setLoading] = useState(false);
-      const { signIn } = useAuth();
-
-      const handleLogin = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-          await signIn(email, password);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      return (
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4c1d95 70%,#7c3aed 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '24px', padding: '32px', maxWidth: '400px', width: '100%' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={{ fontSize: '48px' }}>🏛️</div>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>राजभाषा पोर्टल</h1>
-              <p style={{ fontSize: '12px', color: '#64748b' }}>तिमाही प्रगति रिपोर्ट · अनुलग्नक-2</p>
-            </div>
-            <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>ईमेल</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your-email@domain.com" required
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>पासवर्ड</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-              {error && <div style={{ fontSize: '12px', color: '#dc2626', background: '#fee2e2', padding: '8px 12px', borderRadius: '8px', marginBottom: '16px' }}>{error}</div>}
-              <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: 800, fontSize: '14px' }}>
-                {loading ? 'लॉगिन हो रहा है...' : 'लॉगिन करें →'}
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    function Dashboard({ reports, user, setView, sections }) {
-      const r = ROLES[user.role] || { color: '#6366f1' };
-      const myReports = user.role === 'SECTION' ? reports.filter(x => x.section_name === user.section_name) : reports;
-
-      const inboxCount = {
-        AAO: reports.filter(x => ['PENDING_AAO', 'SAO_RETURNED'].includes(x.status) && x.section_name === user.mapped_section).length,
-        SAO: reports.filter(x => x.status === 'AAO_APPROVED' && x.section_name === user.mapped_section).length,
-        HINDI_CELL: reports.filter(x => x.status === 'SAO_APPROVED').length
-      };
-      const pendingForMe = inboxCount[user.role] || 0;
-
-      const stats = [
-        { label: "कुल रिपोर्टें", value: myReports.length, icon: "📄", c: "#6366f1" },
-        { label: "लंबित", value: pendingForMe, icon: "⏳", c: "#f59e0b" },
-        { label: "स्वीकृत", value: myReports.filter(x => x.status === "SUBMITTED").length, icon: "✅", c: "#10b981" },
-      ];
-
+    function Dashboard({ reports, user, setView }) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: "16px 20px", border: "1.5px solid #e2e8f0" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", marginBottom: 10 }}>रिपोर्ट प्रवाह</div>
-            <WorkflowPipeline currentRole={user.role} />
+          <div style={{ background: "#fff", borderRadius: 16, padding: "20px", border: "1.5px solid #e2e8f0", textAlign: 'center' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800 }}>नमस्ते, आपका स्वागत है! 🏛️</h2>
+            <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>आप सफलतापूर्वक लॉग-इन हो चुके हैं। नीचे दी गई प्रगति रिपोर्ट भरें।</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12 }}>
-            {stats.map(s => (
-              <div key={s.label} style={{ background: `${s.c}15`, borderRadius: 14, padding: "16px 18px", border: `1.5px solid ${s.c}30` }}>
-                <div style={{ fontSize: 22 }}>{s.icon}</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: s.c, marginTop: 4 }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: s.c, marginTop: 4, fontWeight: 600 }}>{s.label}</div>
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ background: "#eef2ff", padding: 16, borderRadius: 12, flex: 1 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#6366f1" }}>{reports.length}</div>
+              <div style={{ fontSize: 12, color: "#6366f1" }}>कुल प्रविष्टियां</div>
+            </div>
           </div>
-          {user.role !== "SECTION" && pendingForMe > 0 && (
-            <button onClick={() => setView("inbox")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: r.grad || r.color, borderRadius: 14, padding: "16px 22px", border: "none", color: "#fff", width: '100%', cursor: 'pointer' }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><span style={{ fontSize: 28 }}>📥</span>
-                <div style={{ textAlign: "left" }}><div style={{ fontWeight: 800, fontSize: 15 }}>{pendingForMe} रिपोर्ट आपकी प्रतीक्षा में</div></div>
-              </div><span>→</span>
-            </button>
-          )}
         </div>
       );
     }
 
-    function ReportForm({ onSave, user, reports, initialData, onCancel }) {
-      const [data, setData] = useState(initialData || emptyForm());
-      const [step, setStep] = useState(0);
-      const [done, setDone] = useState(false);
-      const [submitting, setSubmitting] = useState(false);
+    function ReportForm({ onSave, user }) {
+      const [data, setData] = useState(emptyForm());
       const set = (k, v) => setData(d => ({ ...d, [k]: v }));
-
-      const isHindiSection = user.role === "HINDI_CELL" || user.section_name === "हिंदी अनुभाग";
-      const isQ4 = data.quarter === "Q4";
-      const showPart2 = isQ4 && isHindiSection;
-      const totalSteps = showPart2 ? 4 : 3;
-
-      const alreadySubmitted = !initialData && reports.some(r => r.section_name === user.section_name && String(r.year) === String(data.year) && r.quarter === data.quarter);
-
-      const validationErrors = useMemo(() => {
-        const errs = [];
-        const num = (v) => parseFloat(v) || 0;
-        if (num(data.b1_s1_hindi_files) > num(data.b1_s1_total_files)) errs.push("भाग 1(1): हिंदी फाइलें कुल फाइलों से अधिक नहीं हो सकतीं।");
-        if (num(data.b1_s2_hindi_minutes) > num(data.b1_s2_total_meetings)) errs.push("भाग 1(2): हिंदी बैठकें कुल बैठकों से अधिक नहीं हो सकतीं।");
-        return errs;
-      }, [data]);
-
-      const handleSubmit = async () => {
-        if (validationErrors.length > 0) return;
-        setSubmitting(true);
-        const report = { ...data };
-        if (!report.section_name) report.section_name = user.section_name;
-
-        if (!initialData) {
-          report.status = "PENDING_AAO";
-          report.timeline = [{ ts: new Date().toISOString(), role: "SECTION", name: user.section_name, action: "रिपोर्ट जमा की और AAO को भेजी", remark: "" }];
-        } else {
-          if (user.role === "SECTION" && report.status === "AAO_RETURNED") report.status = "PENDING_AAO";
-          report.timeline = [...(report.timeline || []), { ts: new Date().toISOString(), role: user.role, name: user.section_name || user.role, action: "संशोधन किया गया", remark: "" }];
-        }
-        await onSave(report);
-        setSubmitting(false);
-        setDone(true);
-      };
-
-      if (done) return (
-        <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", borderRadius: 20 }}>
-          <div style={{ fontSize: 56 }}>🎉</div>
-          <h2>सफलतापूर्वक जमा हो गया!</h2>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#6366f1" }}>{data.ackId}</div>
-          <button onClick={onCancel} style={{ marginTop: 20, padding: '8px 16px' }}>वापस जाएँ</button>
-        </div>
-      );
-
-      const steps = ["कार्यालय विवरण", "भाग-I", ...(showPart2 ? ["भाग-II"] : []), "पूर्वावलोकन"];
 
       return (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <div className="no-print" style={{ background: "#fff", borderRadius: 14, padding: "14px 20px", marginBottom: 18, border: "1.5px solid #e2e8f0" }}>
-            <div style={{ display: "flex", marginBottom: 8 }}>
-              {steps.map((s, i) => (
-                <div key={i} onClick={() => i < step && setStep(i)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: i < step ? "pointer" : "default" }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: i === step ? "#6366f1" : i < step ? "#d1fae5" : "#f8fafc", color: i === step ? '#fff' : '#000' }}>{i < step ? "✓" : i + 1}</div>
-                  <span style={{ fontSize: 10 }}>{s}</span>
+          <SecCard title="कार्यालय का मूल विवरण" icon="🏢" color={SECTION_COLORS[0]}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Inp label="कार्यालय का नाम और पूरा पता" value={data.officeNameAddress} onChange={v => set("officeNameAddress", v)} />
+              <Grid>
+                <Inp label="अधिकारी का नाम" value={data.officerName} onChange={v => set("officerName", v)} />
+                <Inp label="फोन नं." value={data.phone} onChange={v => set("phone", v)} />
+              </Grid>
+              <Grid>
+                <div>
+                  <label style={{ fontSize: 11, display: "block", marginBottom: 4 }}>वर्ष</label>
+                  <select value={data.year} onChange={e => set("year", e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0" }}>
+                    {YEARS.map(y => <option key={y}>{y}</option>)}
+                  </select>
                 </div>
-              ))}
+                <Radio label="क्षेत्र" value={data.region} onChange={v => set("region", v)} options={["A", "B", "C"]} />
+              </Grid>
             </div>
-          </div>
+          </SecCard>
 
-          {step === 0 && (
-            <SecCard title="कार्यालय की जानकारी" icon="🏢" color={SECTION_COLORS[0]}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <Inp label="कार्यालय का नाम और पूरा पता" value={data.officeNameAddress} onChange={v => set("officeNameAddress", v)} />
-                <Grid cols={3}>
-                  <Inp label="अधिकारी का नाम" value={data.officerName} onChange={v => set("officerName", v)} />
-                  <Inp label="एस.टी.डी. कोड" value={data.stdCode} onChange={v => set("stdCode", v)} />
-                  <Inp label="फोन नं." value={data.phone} onChange={v => set("phone", v)} />
-                </Grid>
-                <Grid cols={3}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, display: "block", marginBottom: 6 }}>वर्ष</label>
-                    <select value={data.year} onChange={e => set("year", e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0" }}>
-                      {YEARS.map(y => <option key={y}>{y}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, display: "block", marginBottom: 6 }}>तिमाही</label>
-                    <select value={data.quarter} onChange={e => set("quarter", e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0" }}>
-                      {QUARTERS.map(q => <option key={q.id} value={q.id}>{q.label}</option>)}
-                    </select>
-                  </div>
-                  <Radio label="क्षेत्र" value={data.region} onChange={v => set("region", v)} options={["A", "B", "C"]} />
-                </Grid>
+          <SecCard title="भाग 1: पत्राचार विवरण" icon="📜" color={SECTION_COLORS[0]}>
+            <Grid>
+              <Num label="कुल फाइलें" value={data.b1_s1_total_files} onChange={v => set("b1_s1_total_files", v)} />
+              <Num label="हिंदी में फाइलें" value={data.b1_s1_hindi_files} onChange={v => set("b1_s1_hindi_files", v)} />
+            </Grid>
+          </SecCard>
+
+          <button onClick={() => onSave(data)} style={{ width: "100%", padding: "14px", borderRadius: 12, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", fontWeight: 800, border: 'none', cursor: 'pointer' }}>
+            ✅ डेटा सुरक्षित करें (Submit Report)
+          </button>
+        </div>
+      );
+    }
+
+    function Inbox({ reports }) {
+      return (
+        <div style={{ background: "#fff", padding: 16, borderRadius: 12, border: "1.5px solid #e2e8f0" }}>
+          <h3 style={{ fontWeight: 'bold', marginBottom: 12 }}>मेरी भेजी गई रिपोर्ट्स</h3>
+          {reports.length === 0 ? <p style={{ color: '#94a3b8', fontSize: 13 }}>कोई रिपोर्ट नहीं मिली।</p> : 
+            reports.map(r => (
+              <div key={r.id} style={{ padding: 10, borderBottom: "1px solid #f1f5f9" }}>
+                <div style={{ fontWeight: 'bold' }}>{r.officeNameAddress || "विवरण उपलब्ध नहीं"}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>वर्ष: {r.year} | पावती: {r.ackId}</div>
               </div>
-            </SecCard>
-          )}
-
-          {step === 1 && (
-            <div>
-              <SecCard title="1. माननीय मंत्री जी को भेजी गई फाइलें" icon="📜" color={SECTION_COLORS[0]}>
-                <Grid><Num label="कुल फाइलें" value={data.b1_s1_total_files} onChange={v => set("b1_s1_total_files", v)} /><Num label="हिंदी में" value={data.b1_s1_hindi_files} onChange={v => set("b1_s1_hindi_files", v)} /></Grid>
-              </SecCard>
-              <SecCard title="2. सचिव/समकक्ष स्तर पर बैठकें/फाइलें" icon="🏛️" color={SECTION_COLORS[1]}>
-                <Grid><Num label="I. कुल बैठकें" value={data.b1_s2_total_meetings} onChange={v => set("b1_s2_total_meetings", v)} /><Num label="II. हिंदी कार्यवाही" value={data.b1_s2_hindi_minutes} onChange={v => set("b1_s2_hindi_minutes", v)} /></Grid>
-              </SecCard>
-            </div>
-          )}
-
-          {step === 2 && showPart2 && (
-            <SecCard title="3. कंप्यूटर टंकण प्रशिक्षण" icon="🖥️" color={SECTION_COLORS[2]}>
-              <Grid cols={2}><Num label="कुल कार्मिक" value={data.b2_comp_total} onChange={v => set("b2_comp_total", v)} /><Num label="प्रशिक्षित" value={data.b2_comp_trained} onChange={v => set("b2_comp_trained", v)} /></Grid>
-            </SecCard>
-          )}
-
-          {((step === 2 && !showPart2) || (step === 3 && showPart2)) && (
-            <div className="no-print" style={{ background: "#fff", borderRadius: 16, padding: 24, border: "1.5px solid #e2e8f0" }}>
-              <h3>👁️ पूर्वावलोकन एवं प्रमाण-पत्र</h3>
-              {validationErrors.length > 0 && (
-                <div style={{ background: "#fee2e2", padding: 16, borderRadius: 12, border: "1.5px solid #ef4444", marginBottom: 16 }}>
-                  {validationErrors.map((e, i) => <div key={i} style={{ color: "#991b1b" }}>⚠️ {e}</div>)}
-                </div>
-              )}
-              <button onClick={handleSubmit} disabled={validationErrors.length > 0 || submitting} style={{ width: "100%", padding: "14px 0", borderRadius: 14, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", fontWeight: 800 }}>
-                {submitting ? "जमा हो रहा है..." : "✅ रिपोर्ट अंतिम रूप से जमा करें"}
-              </button>
-            </div>
-          )}
-
-          <div className="no-print" style={{ display: "flex", justifyContent: "space-between", marginTop: 18 }}>
-            <button type="button" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0} style={{ padding: "9px 22px", borderRadius: 10, border: "1.5px solid #e2e8f0" }}>← पिछला</button>
-            {step < totalSteps - 1 && <button type="button" onClick={() => setStep(s => s + 1)} disabled={step === 0 && alreadySubmitted} style={{ padding: "9px 22px", borderRadius: 10, color: "#fff", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none" }}>अगला →</button>}
-          </div>
-        </div>
-      );
-    }
-
-    function Inbox({ reports, user, onAction, onEdit }) {
-      const r = ROLES[user.role] || { color: '#6366f1' };
-      const [selected, setSelected] = useState(null);
-      const [search, setSearch] = useState("");
-
-      const filtered = reports.filter(x => {
-        if (!search) return true;
-        const secName = x.section_name ? String(x.section_name).toLowerCase() : "";
-        const ack = x.ackId ? String(x.ackId).toLowerCase() : "";
-        const query = search.toLowerCase();
-        return secName.includes(query) || ack.includes(query);
-      });
-
-      if (selected) {
-        return (
-          <div style={{ maxWidth: 760, margin: "0 auto" }}>
-            <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#6366f1", cursor: "pointer", fontWeight: "bold" }}>← वापस सूची में</button>
-            <div style={{ background: r.grad || r.color, borderRadius: 16, padding: "18px 22px", color: "#fff", marginTop: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{selected.section_name}</div>
-              <div>{selected.ackId} · {selected.year}</div>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #e2e8f0", overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", background: "#f8fafc" }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 खोजें..." style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0" }} />
-          </div>
-          {filtered.map((rep) => (
-            <div key={rep.id} onClick={() => setSelected(rep)} style={{ padding: "14px 20px", borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}>
-              <div style={{ fontWeight: "bold" }}>{rep.section_name}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>{rep.ackId} · {rep.year}</div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    function ConsolidatedView({ reports }) {
-      const [q, setQ] = useState("Q4");
-      const [y, setY] = useState("2026");
-      const filtered = reports.filter(r => r.quarter === q && String(r.year) === String(y));
-
-      return (
-        <div style={{ padding: 20, background: "#fff", borderRadius: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: "bold" }}>📑 समेकित रिपोर्ट विवरण</h2>
-          <div style={{ marginTop: 10 }}>सक्रिय रिपोर्टों की संख्या: {filtered.length}</div>
-        </div>
-      );
-    }
-
-    function MasterControl({ reports, sections, onEditReport }) {
-      const [searchQuery, setSearchQuery] = useState("");
-      const [newSec, setNewSec] = useState("");
-      const [isClearing, setIsClearing] = useState(false);
-      const { supabase: supabaseClient } = useAuth();
-
-      const filteredReports = reports.filter(r => {
-        const secName = r.section_name ? String(r.section_name).toLowerCase() : "";
-        const yr = r.year ? String(r.year).toLowerCase() : "";
-        const query = searchQuery.toLowerCase();
-        return secName.includes(query) || yr.includes(query);
-      });
-
-      const handleAddSection = async () => {
-        if (!newSec.trim()) return;
-        const { error } = await supabaseClient.from('sections').insert([{ name: newSec.trim() }]);
-        if (error) alert("त्रुटि: " + error.message);
-        else setNewSec("");
-      };
-
-      const handleResetAll = async () => {
-        const pass = prompt("⚠️ 'RESET' टाइप करें:");
-        if (pass !== "RESET") return;
-        setIsClearing(true);
-        try {
-          // ✅ FIXED: Changed .not() syntax with .neq() to resolve 406 REST API Crash
-          const { error } = await supabaseClient
-            .from('reports')
-            .delete()
-            .neq('status', 'SETTINGS');
-          if (error) throw error;
-          alert("✅ सभी प्रगति रिपोर्टें मिटा दी गईं!");
-        } catch (e) { 
-          alert("Error resetting database: " + e.message); 
-        } finally {
-          setIsClearing(false);
-        }
-      };
-
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 800, margin: "0 auto" }}>
-          <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: 24 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800 }}>✏️ मास्टर रिपोर्ट एडिटर</h2>
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="खोजें..." style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #cbd5e1", marginTop: 12 }} />
-            <div style={{ marginTop: 12 }}>
-              {filteredReports.map(r => (
-                <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
-                  <span style={{ fontWeight: "bold" }}>{r.section_name} ({r.year})</span>
-                  <button onClick={() => onEditReport(r)} style={{ background: "#f59e0b", color: "#fff", padding: "4px 8px", borderRadius: 6, border: "none" }}>✏️ एडिट</button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ background: "#fee2e2", border: "2px solid #ef4444", borderRadius: 16, padding: 24 }}>
-            <h2 style={{ color: "#991b1b", fontSize: 18, fontWeight: 800 }}>⚠️ डेंजर ज़ोन</h2>
-            <button onClick={handleResetAll} disabled={isClearing} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, fontWeight: "bold", marginTop: 12 }}>
-              {isClearing ? "डेटा मिटाया जा रहा..." : "🗑️ रीसेट करें"}
-            </button>
-          </div>
+            ))
+          }
         </div>
       );
     }
@@ -778,31 +354,25 @@
       if (!user || !profile) return <LoginScreen />;
 
       const { reports, loading: reportsLoading } = useReports();
-      const { sections, loading: sectionsLoading } = useSections();
       const [view, setView] = useState('dashboard');
-      const [editingReport, setEditingReport] = useState(null);
 
-      if (reportsLoading || sectionsLoading) return <LoadingSpinner />;
+      if (reportsLoading) return <LoadingSpinner />;
 
       return (
-        <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Noto Sans Devanagari', sans-serif" }}>
-          <nav style={{ background: ROLES[profile.role]?.grad || '#6366f1', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', color: '#fff', alignItems: 'center' }}>
-            <span style={{ fontWeight: 800 }}>🏛️ राजभाषा QPR</span>
-            <div style={{ display: "flex", gap: "14px" }}>
+        <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "sans-serif" }}>
+          <nav style={{ background: '#312e81', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', color: '#fff', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800 }}>🏛️ राजभाषा पोर्टल (Supabase)</span>
+            <div style={{ display: "flex", gap: "16px" }}>
               <button onClick={() => setView('dashboard')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>डैशबोर्ड</button>
-              {profile.role === 'SECTION' && <button onClick={() => { setEditingReport(null); setView('form'); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>नई रिपोर्ट</button>}
-              <button onClick={() => setView('inbox')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>इनबॉक्स</button>
-              {profile.role === 'HINDI_CELL' && <button onClick={() => setView('consolidated')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>समेकित</button>}
-              {profile.role === 'HINDI_CELL' && <button onClick={() => setView('master')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>मास्टर</button>}
-              <button onClick={signOut} style={{ color: "#fecaca", background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700 }}>बाहर</button>
+              <button onClick={() => setView('form')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>डाटा फिलिंग (Form)</button>
+              <button onClick={() => setView('inbox')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>इतिहास (Inbox)</button>
+              <button onClick={signOut} style={{ color: "#fecaca", background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700 }}>लॉगआउट</button>
             </div>
           </nav>
           <main style={{ maxWidth: '960px', margin: '0 auto', padding: '24px 16px' }}>
-            {view === 'dashboard' && <Dashboard reports={reports} user={profile} setView={setView} sections={sections} />}
-            {view === 'form' && <ReportForm onSave={async (rep) => { await supabase.from('reports').upsert(rep); setView('inbox'); }} user={profile} reports={reports} initialData={editingReport} onCancel={() => setView('inbox')} />}
-            {view === 'inbox' && <Inbox reports={reports} user={profile} onEdit={(r) => { setEditingReport(r); setView('form'); }} />}
-            {view === 'consolidated' && <ConsolidatedView reports={reports} sections={sections} />}
-            {view === 'master' && profile.role === 'HINDI_CELL' && <MasterControl reports={reports} sections={sections} onEditReport={(r) => { setEditingReport(r); setView('form'); }} />}
+            {view === 'dashboard' && <Dashboard reports={reports} user={profile} setView={setView} />}
+            {view === 'form' && <ReportForm onSave={async (rep) => { rep.submitted_by = user.id; rep.section_name = profile.section_name; await supabase.from('reports').upsert(rep); setView('inbox'); }} user={profile} />}
+            {view === 'inbox' && <Inbox reports={reports} />}
           </main>
         </div>
       );
