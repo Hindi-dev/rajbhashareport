@@ -16,7 +16,6 @@
   <style>
     body { background: #f8fafc; font-family: 'Noto Sans Devanagari', sans-serif; margin: 0; padding: 0; }
     * { box-sizing: border-box; }
-    
     @media screen { .print-only { display: none !important; } }
     @media print {
       .no-print { display: none !important; }
@@ -24,33 +23,33 @@
       @page { margin: 12mm 15mm; size: A4; }
       body { background: #fff !important; }
     }
-
     .spinner { border: 4px solid #f3f4f6; border-top: 4px solid #6366f1; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;}
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Toast */
+    .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+    .toast { background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-weight: 600; font-size: 14px; animation: slideIn 0.3s ease; }
+    .toast-error { background: #dc2626; }
+    .toast-success { background: #16a34a; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   </style>
 </head>
 <body>
-
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useCallback, createContext, useContext } = React;
+    const { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } = React;
 
-    // ============================================================
-    //  🔧 SUPABASE CONFIGURATION
-    // ============================================================
+    // Supabase config
     const SUPABASE_URL = "https://ykooktqnxunmoenucdoy.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Wo14uG3EowORP_eHV7SMlw_o1HLqU0f";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ============================================================
-    //  CONSTANTS & WORKFLOW LOGIC
-    // ============================================================
+    // Constants
     const ROLES = {
-      DEO: { label: "DEO/Clerk", icon: "🏢", color: "#6366f1", bg: "#eef2ff", grad: "linear-gradient(135deg,#6366f1,#8b5cf6)" },
-      AAO: { label: "AAO", icon: "🔎", color: "#0ea5e9", bg: "#f0f9ff", grad: "linear-gradient(135deg,#0ea5e9,#6366f1)" },
-      SAO: { label: "SAO", icon: "✅", color: "#10b981", bg: "#ecfdf5", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" },
-      HINDI_CELL: { label: "हिंदी प्रकोष्ठ", icon: "🏛️", color: "#f59e0b", bg: "#fffbeb", grad: "linear-gradient(135deg,#f59e0b,#ef4444)" },
+      DEO: { label: "DEO/Clerk", icon: "🏢", color: "#6366f1", bg: "#eef2ff" },
+      AAO: { label: "AAO", icon: "🔎", color: "#0ea5e9", bg: "#f0f9ff" },
+      SAO: { label: "SAO", icon: "✅", color: "#10b981", bg: "#ecfdf5" },
+      HINDI_CELL: { label: "हिंदी प्रकोष्ठ", icon: "🏛️", color: "#f59e0b", bg: "#fffbeb" },
     };
 
     const STATUS = {
@@ -64,115 +63,100 @@
       SUBMITTED: { label: "हिंदी प्रकोष्ठ स्वीकृत", icon: "🎉", color: "#16a34a", bg: "#dcfce7" },
     };
 
-    const WORKFLOW_ACTIONS = {
-      DEO: {
-        AAO_RETURNED: [{ label: "✅ सुधार कर AAO को पुनः भेजें", action: "PENDING_AAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }],
-      },
-      AAO: {
-        PENDING_AAO: [
-          { label: "✅ SAO को अग्रेषित करें", action: "PENDING_SAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }, 
-          { label: "↩️ अनुभाग (DEO) को वापस करें", action: "AAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
-        ],
-        SAO_RETURNED: [
-          { label: "✅ SAO को पुनः भेजें", action: "PENDING_SAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }, 
-          { label: "↩️ अनुभाग (DEO) को वापस करें", action: "AAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
-        ],
-      },
-      SAO: {
-        PENDING_SAO: [
-          { label: "✅ हिंदी प्रकोष्ठ को भेजें", action: "SAO_APPROVED", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }, 
-          { label: "↩️ AAO को वापस करें", action: "SAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
-        ],
-      },
-      HINDI_CELL: {
-        SAO_APPROVED: [
-          { label: "🎉 अंतिम स्वीकृति दें", action: "SUBMITTED", grad: "linear-gradient(135deg,#f59e0b,#10b981)" }, 
-          { label: "↩️ SAO को वापस करें", action: "SAO_RETURNED", grad: "linear-gradient(135deg,#dc2626,#9f1239)" }
-        ],
-      },
-    };
-
-    const workflowActionsFor = (role, status) => WORKFLOW_ACTIONS[role]?.[status] || [];
-    
-    const QUARTERS = [{ id: "Q1", label: "Q1 · अप्रैल–जून" }, { id: "Q2", label: "Q2 · जुलाई–सितंबर" }, { id: "Q3", label: "Q3 · अक्टूबर–दिसंबर" }, { id: "Q4", label: "Q4 · जनवरी–मार्च" }];
+    const QUARTERS = [
+      { id: "Q1", label: "Q1 · अप्रैल–जून" },
+      { id: "Q2", label: "Q2 · जुलाई–सितंबर" },
+      { id: "Q3", label: "Q3 · अक्टूबर–दिसंबर" },
+      { id: "Q4", label: "Q4 · जनवरी–मार्च" }
+    ];
     const YEARS = ["2025", "2026", "2027", "2028"];
 
     function genId() { return `RAJ-${Date.now().toString(36).toUpperCase().slice(-7)}`; }
 
-    // MASSIVE FORM STATE TO MATCH THE NEW REQUIREMENTS
+    // Empty form (with all fields, including new cert date/place)
     function emptyForm() {
       return {
         officeNameAddress: "", officerPhone: "", officerEmail: "", year: "2026", quarter: "Q4", ackId: genId(),
-        
         // Part 1
-        b1_s1_total_files: "", b1_s1_hindi_files: "", 
-        b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "", 
-        b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "", 
+        b1_s1_total_files: "", b1_s1_hindi_files: "",
+        b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "",
+        b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "",
         b1_s4_total_received: "", b1_s4_no_reply_needed: "", b1_s4_hindi_reply: "", b1_s4_english_reply: "",
-        
         b1_s5_ka_total: "", b1_s5_ka_hindi_reply: "", b1_s5_ka_eng_reply: "", b1_s5_ka_no_reply: "",
         b1_s5_kha_total: "", b1_s5_kha_hindi_reply: "", b1_s5_kha_eng_reply: "", b1_s5_kha_no_reply: "",
-        
         b1_s6_ka_total: "", b1_s6_ka_hindi: "", b1_s6_ka_english: "",
         b1_s6_kha_total: "", b1_s6_kha_hindi: "", b1_s6_kha_english: "",
         b1_s6_ga_total: "", b1_s6_ga_hindi: "", b1_s6_ga_english: "",
-        
-        b1_s7_hindi_pages: "", b1_s7_eng_pages: "", b1_s7_total_pages: "", b1_s7_eoffice: "", 
+        b1_s7_hindi_pages: "", b1_s7_eng_pages: "", b1_s7_total_pages: "", b1_s7_eoffice: "",
         b1_s8_workshops: "", b1_s8_staff: "", b1_s8_officers: "",
         b1_s9_meeting_date: "", b1_s9_sub_office_cmtes: "", b1_s9_sub_office_meetings: "", b1_s9_agenda_hindi: "हाँ",
-        b1_s10_meeting_date: "", 
+        b1_s10_meeting_date: "",
         b1_s11_innovation: "", b1_s11_special: "", b1_s11_other: "",
-        b1_cert_name: "", b1_cert_desig: "", b1_cert_phone: "", b1_cert_fax: "", b1_cert_email: "", b1_cert_agreed: false,
-        
-        // Part 2
+        // Part 1 Certificate (now also date/place)
+        b1_cert_name: "", b1_cert_desig: "", b1_cert_phone: "", b1_cert_date: "", b1_cert_place: "", b1_cert_agreed: false,
+        // Part 2 (only for Hindi Cell, Q4)
         b2_s1_notified: "हाँ", b2_s1_sub_total: "", b2_s1_sub_notified: "", b2_s1_sub_action: "",
-        
         b2_s2i_off_total: "", b2_s2i_off_ministerial: "", b2_s2i_off_pravinta: "", b2_s2i_off_karyasadhak: "", b2_s2i_off_training: "", b2_s2i_off_remaining: "",
         b2_s2i_staff_total: "", b2_s2i_staff_ministerial: "", b2_s2i_staff_pravinta: "", b2_s2i_staff_karyasadhak: "", b2_s2i_staff_training: "", b2_s2i_staff_remaining: "",
-        
         b2_s2ii_steno_total: "", b2_s2ii_steno_trained: "", b2_s2ii_steno_working: "", b2_s2ii_steno_remaining: "",
         b2_s2ii_typist_total: "", b2_s2ii_typist_trained: "", b2_s2ii_typist_working: "", b2_s2ii_typist_remaining: "",
         b2_s2ii_tax_total: "", b2_s2ii_tax_trained: "", b2_s2ii_tax_working: "", b2_s2ii_tax_remaining: "",
-        
         b2_s2iii_off_total: "", b2_s2iii_off_trained: "", b2_s2iii_off_remaining: "",
         b2_s2iii_staff_total: "", b2_s2iii_staff_trained: "", b2_s2iii_staff_remaining: "",
-        
         b2_s3_comp_total: "", b2_s3_comp_trained: "", b2_s3_comp_working: "",
         b2_s4_laptop_total: "", b2_s4_laptop_unicode: "", b2_s4_laptop_pct: "",
         b2_s5_manual_total: "", b2_s5_manual_bi: "", b2_s5_form_total: "", b2_s5_form_bi: "",
         b2_s6_orders: "", b2_s6_remaining: "",
-        
         b2_s7_prog_name: "", b2_s7_duration: "", b2_s7_hindi: "", b2_s7_eng: "", b2_s7_mixed: "",
         b2_s8_sec_total: "", b2_s8_sec_inspected: "", b2_s8_sub_total: "", b2_s8_sub_inspected: "", b2_s8_hindi_secs: "",
         b2_s9_pub_total: "", b2_s9_pub_hindi: "", b2_s9_pub_eng: "",
         b2_s10_exp_total: "", b2_s10_exp_hindi: "",
-        
         b2_s11_total: "", b2_s11_know: "", b2_s11_not: "", b2_s11_25: "", b2_s11_50: "", b2_s11_75: "", b2_s11_100: "", b2_s11_full: "",
         b2_s12_total: "", b2_s12_know: "", b2_s12_not: "", b2_s12_25: "", b2_s12_50: "", b2_s12_75: "", b2_s12_100: "", b2_s12_full: "",
-        
         b2_s13_post: "", b2_s13_hq_sanc: "", b2_s13_hq_vac: "", b2_s13_sub_sanc: "", b2_s13_sub_vac: "",
         b2_s14_url: "", b2_s14_type: "केवल अंग्रेजी में", b2_s14_lang_opt: "नहीं",
-        
         b2_s15_divas: "", b2_s15_seminar: "", b2_s15_other: "", b2_s15_innovation: "",
         b2_s16_tolic_member: "हाँ", b2_s16_last_meeting: "", b2_s16_hod_attended: "हाँ",
-        b2_cert_name: "", b2_cert_desig: "", b2_cert_phone: "", b2_cert_fax: "", b2_cert_email: "", b2_cert_agreed: false
+        b2_cert_name: "", b2_cert_desig: "", b2_cert_phone: "", b2_cert_date: "", b2_cert_place: "", b2_cert_agreed: false,
+        // Timeline (array)
+        timeline: []
       };
     }
 
-    // ============================================================
-    //  AUTH CONTEXT
-    // ============================================================
-    const AuthContext = createContext(null);
+    // Toast context
+    const ToastContext = createContext(null);
+    function ToastProvider({ children }) {
+      const [toasts, setToasts] = useState([]);
+      const addToast = (message, type = 'success') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+      };
+      return (
+        <ToastContext.Provider value={{ addToast }}>
+          {children}
+          <div className="toast-container">
+            {toasts.map(t => (
+              <div key={t.id} className={`toast ${t.type === 'error' ? 'toast-error' : 'toast-success'}`}>{t.message}</div>
+            ))}
+          </div>
+        </ToastContext.Provider>
+      );
+    }
+    function useToast() { return useContext(ToastContext); }
 
+    // Auth Context
+    const AuthContext = createContext(null);
     function AuthProvider({ children }) {
       const [user, setUser] = useState(null);
       const [profile, setProfile] = useState(null);
       const [loading, setLoading] = useState(true);
+      const toast = useToast();
 
       const fetchProfile = useCallback(async (authUser) => {
         if (!authUser) return null;
         const { data: profData, error: profErr } = await supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
-        if (profErr || !profData) { setProfile(null); throw new Error("No profile found"); }
+        if (profErr || !profData) { setProfile(null); throw new Error("प्रोफ़ाइल नहीं मिली"); }
         if (profData.section_id) {
           const { data: secData } = await supabase.from('sections').select('section_name').eq('id', profData.section_id).maybeSingle();
           profData.section_name = secData?.section_name || `Section ${profData.section_id}`;
@@ -183,11 +167,11 @@
 
       useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session?.user) { setUser(session.user); fetchProfile(session.user).finally(() => setLoading(false)); } 
+          if (session?.user) { setUser(session.user); fetchProfile(session.user).catch(() => {}).finally(() => setLoading(false)); }
           else setLoading(false);
         });
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (session?.user) { setUser(session.user); fetchProfile(session.user); } 
+          if (session?.user) { setUser(session.user); fetchProfile(session.user).catch(() => {}); }
           else { setUser(null); setProfile(null); }
         });
         return () => subscription.unsubscribe();
@@ -197,36 +181,42 @@
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await fetchProfile(data.user);
+        toast?.("लॉगिन सफल!", "success");
       };
-      const signOut = () => supabase.auth.signOut();
+      const signOut = () => { supabase.auth.signOut(); toast?.("लॉगआउट", "success"); };
       return <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, supabase }}>{children}</AuthContext.Provider>;
     }
     function useAuth() { return useContext(AuthContext); }
 
-    // ============================================================
-    //  DATA HOOKS
-    // ============================================================
+    // Data hook
     function useReports() {
       const [reports, setReports] = useState([]);
       const [loading, setLoading] = useState(true);
       const { user, profile } = useAuth();
-      useEffect(() => {
+      const toast = useToast();
+
+      const fetchReports = useCallback(async () => {
         if (!user || !profile) return;
-        const fetchReports = async () => {
-          const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
-          if (!error) setReports(data || []);
-          setLoading(false);
-        };
+        let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
+        if (profile.role !== 'HINDI_CELL') {
+          query = query.eq('section_name', profile.section_name);
+        }
+        const { data, error } = await query;
+        if (error) { toast?.(error.message, 'error'); setLoading(false); return; }
+        setReports(data || []);
+        setLoading(false);
+      }, [user, profile]);
+
+      useEffect(() => {
         fetchReports();
         const channel = supabase.channel('db-reports-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => { fetchReports(); }).subscribe();
         return () => supabase.removeChannel(channel);
-      }, [user, profile]);
-      return { reports, loading };
+      }, [fetchReports]);
+
+      return { reports, loading, refetch: fetchReports };
     }
 
-    // ============================================================
-    //  UI COMPONENTS
-    // ============================================================
+    // ========== UI Components ==========
     const Inp = ({ label, value, onChange, type = "text", disabled = false, placeholder = "" }) => (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>{label}</label>}
@@ -238,7 +228,7 @@
     const Num = ({ label, value, onChange, disabled = false }) => (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>{label}</label>}
-        <input type="number" min={0} value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
+        <input type="number" min="0" step="1" value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
           style={{ padding: "10px 14px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 14, fontWeight: 600, background: disabled ? "#f1f5f9" : "#fff", outline: "none", width: "100%", fontFamily: "inherit" }} />
       </div>
     );
@@ -255,17 +245,15 @@
       </div>
     );
 
-    const SecCard = ({ title, icon, children }) => {
-      return (
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.03)" }}>
-          <div style={{ background: "#f8fafc", padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 20 }}>{icon}</span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>{title}</span>
-          </div>
-          <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+    const SecCard = ({ title, icon, children }) => (
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.03)" }}>
+        <div style={{ background: "#f8fafc", padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>{icon}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>{title}</span>
         </div>
-      );
-    };
+        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+      </div>
+    );
 
     const Grid = ({ cols = 2, children }) => (
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols},1fr)`, gap: 16 }}>{children}</div>
@@ -282,9 +270,9 @@
               <tr key={ri}>
                 {row.map((cell, ci) => (
                   <td key={ci} style={{ borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0", padding: 0 }}>
-                    {cell.key ? 
-                      <input type={cell.type || "number"} min={0} value={data[cell.key] || ""} onChange={e => onChange(cell.key, e.target.value)}
-                        style={{ width: "100%", padding: "10px", border: "none", outline: "none", textAlign: "center", fontWeight: 600, background: "transparent" }} /> 
+                    {cell.key ?
+                      <input type={cell.type || "number"} min="0" step="1" value={data[cell.key] || ""} onChange={e => onChange(cell.key, e.target.value)}
+                        style={{ width: "100%", padding: "10px", border: "none", outline: "none", textAlign: "center", fontWeight: 600, background: "transparent" }} />
                       : <div style={{ padding: "10px", textAlign: "center", fontWeight: 700, color: "#1e293b", background: "#f8fafc" }}>{cell.label}</div>
                     }
                   </td>
@@ -296,69 +284,86 @@
       </div>
     );
 
-    // ============================================================
-    //  LOGIN SCREEN 
-    // ============================================================
+    // ========== Certificate Modal (for SAO submission) ==========
+    function CertificateModal({ report, onConfirm, onCancel }) {
+      const [cert, setCert] = useState({
+        b1_cert_name: report.b1_cert_name || "",
+        b1_cert_desig: report.b1_cert_desig || "",
+        b1_cert_phone: report.b1_cert_phone || "",
+        b1_cert_date: report.b1_cert_date || "",
+        b1_cert_place: report.b1_cert_place || "",
+        b1_cert_agreed: report.b1_cert_agreed || false,
+      });
+      const setC = (k, v) => setCert(c => ({ ...c, [k]: v }));
+
+      const handleSubmit = () => {
+        if (!cert.b1_cert_name || !cert.b1_cert_desig || !cert.b1_cert_phone || !cert.b1_cert_date || !cert.b1_cert_place) {
+          alert("कृपया प्रमाण-पत्र के सभी फ़ील्ड भरें।");
+          return;
+        }
+        if (!cert.b1_cert_agreed) {
+          alert("कृपया प्रमाण-पत्र की सहमति चेकबॉक्स टिक करें।");
+          return;
+        }
+        onConfirm(cert);
+      };
+
+      return (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
+          <div style={{ background: "#fff", borderRadius: "16px", maxWidth: 600, width: "90%", padding: "24px", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 16px" }}>📜 भाग-I प्रमाण-पत्र</h3>
+            <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, marginBottom: 20 }}>
+              “मैं यह प्रमाणित करता/करती हूं कि संलग्न ....................को समाप्त तिमाही प्रगति रिपोर्ट(भाग-I/II) में दी गई सूचना उपलब्ध अभिलेखों के आधार पर बनाई गई है तथा मेरी जानकारी के अनुसार पूर्णतया सत्य है। मैं यह अच्छी तरह से समझता/समझती हूं कि राजभाषा अधिनियम, 1963 एवं राजभाषा नियम, 1976 के उपबंधों में दिए गए निदेशों के समुचित अनुपालन की जिम्मेदारी अधोहस्ताक्षरी की है। यदि किसी स्टेज पर रिपोर्ट में भरे गए आंकड़े असत्य अथवा बढ़ा-चढ़ा कर दिखाए गए पाए जाते हैं तो इस कार्यालय को अगले 03 वर्षों के लिए राजभाषा पुरस्कार से विचित कर दिया जाएगा तथा गलत सूचना देने के लिए कार्रवाई हेतु मामला मेरे नियंत्रक कार्यालय/मंत्रालय/मुख्यालय के संज्ञान में भी लाया जाएगा।”
+            </p>
+            <Grid cols={2}>
+              <Inp label="अध्यक्ष का नाम" value={cert.b1_cert_name} onChange={v => setC("b1_cert_name", v)} />
+              <Inp label="पदनाम" value={cert.b1_cert_desig} onChange={v => setC("b1_cert_desig", v)} />
+              <Inp label="फोन नंबर" value={cert.b1_cert_phone} onChange={v => setC("b1_cert_phone", v)} />
+              <Inp label="तिथि" type="date" value={cert.b1_cert_date} onChange={v => setC("b1_cert_date", v)} />
+              <Inp label="स्थान" value={cert.b1_cert_place} onChange={v => setC("b1_cert_place", v)} />
+            </Grid>
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "16px", fontWeight: 700, color: "#991b1b", cursor: "pointer" }}>
+              <input type="checkbox" checked={cert.b1_cert_agreed} onChange={e => setC("b1_cert_agreed", e.target.checked)} style={{ width: 20, height: 20 }} />
+              मैंने उपर्युक्त प्रमाण-पत्र पढ़ लिया है और मैं इससे सहमत हूँ।
+            </label>
+            <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button onClick={onCancel} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer" }}>रद्द करें</button>
+              <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#10b981", color: "#fff", fontWeight: 700, cursor: "pointer" }}>✅ पुष्टि करें</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== Login Screen ==========
     function LoginScreen() {
-      const [selectedRole, setSelectedRole] = useState(null);
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
       const [loading, setLoading] = useState(false);
       const { signIn } = useAuth();
 
-      const roles = [
-        { id: 'DEO', title: 'अनुभाग', desc: 'रिपोर्ट भरें और AAO को भेजें', icon: '🏢', grad: 'linear-gradient(to right, #8b5cf6, #7c3aed)' },
-        { id: 'AAO', title: 'AAO', desc: 'अनुभाग की रिपोर्ट जाँचें और SAO को भेजें', icon: '🔎', grad: 'linear-gradient(to right, #0ea5e9, #3b82f6)' },
-        { id: 'SAO', title: 'SAO', desc: 'AAO की अनुशंसा स्वीकृत करें और आगे भेजें', icon: '✅', grad: 'linear-gradient(to right, #10b981, #06b6d4)' },
-        { id: 'HINDI_CELL', title: 'हिंदी प्रकोष्ठ', desc: 'SAO से आई रिपोर्ट अंतिम रूप से स्वीकार करें', icon: '🏛️', grad: 'linear-gradient(to right, #f59e0b, #ef4444)' }
-      ];
-
       const handleLogin = async (e) => {
         e.preventDefault();
         setError(''); setLoading(true);
-        try { await signIn(email, password); } 
-        catch (err) { setError("ईमेल या पासवर्ड गलत है।"); } 
+        try { await signIn(email, password); }
+        catch (err) { setError("ईमेल या पासवर्ड गलत है।"); }
         finally { setLoading(false); }
       };
 
-      if (!selectedRole) {
-        return (
-          <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ height: '40px' }}></div>
-            <div style={{ background: '#ffffff', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', flex: 1, padding: '32px 24px' }}>
-              <h2 style={{ fontSize: '18px', color: '#475569', marginBottom: '24px', fontWeight: 700 }}>अपनी भूमिका चुनें:</h2>
-              {roles.map(r => (
-                <button key={r.id} onClick={() => setSelectedRole(r)} 
-                style={{ width: '100%', background: r.grad, borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', marginBottom: '16px', border: 'none', color: 'white', textAlign: 'left', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                  <span style={{ fontSize: '36px', marginRight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>{r.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2px' }}>{r.title}</div>
-                    <div style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.3' }}>{r.desc}</div>
-                  </div>
-                  <span style={{ fontSize: '24px', opacity: 0.8 }}>→</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      }
-
       return (
-        <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ height: '40px' }}></div>
-          <div style={{ background: '#ffffff', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', flex: 1, padding: '32px 24px' }}>
-            <button onClick={() => { setSelectedRole(null); setError(''); }} style={{ background: "transparent", border: "none", color: "#6366f1", fontWeight: 700, fontSize: "15px", cursor: "pointer", marginBottom: "24px", display: "flex", alignItems: "center", gap: "6px", padding: 0 }}>← पीछे जाएँ</button>
+        <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px 32px', maxWidth: 400, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <div style={{ fontSize: '56px', marginBottom: '10px' }}>{selectedRole.icon}</div>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>{selectedRole.title} लॉगिन</h1>
+              <div style={{ fontSize: '56px', marginBottom: '10px' }}>🏛️</div>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>राजभाषा QPR</h1>
               <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>अपने क्रेडेंशियल्स दर्ज करें</p>
             </div>
             <form onSubmit={handleLogin}>
               <Inp label="ईमेल आईडी" type="email" value={email} onChange={setEmail} />
               <div style={{ marginTop: '16px' }}><Inp label="पासवर्ड" type="password" value={password} onChange={setPassword} /></div>
               {error && <div style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '8px', marginTop: '16px', fontSize: '13px', fontWeight: 600 }}>{error}</div>}
-              <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: selectedRole.grad, color: '#fff', fontWeight: 800, fontSize: '16px', marginTop: '24px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#6366f1', color: '#fff', fontWeight: 800, fontSize: '16px', marginTop: '24px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
                 {loading ? 'सत्यापन हो रहा है...' : 'लॉगिन करें →'}
               </button>
             </form>
@@ -367,26 +372,35 @@
       );
     }
 
-    // ============================================================
-    //  REPORT FORM (HUGE EXPANSION TO MATCH UPLOADED DOC)
-    // ============================================================
+    // ========== REPORT FORM (with conditional Part 2) ==========
     function ReportForm({ user, reports, initialData, onSave, onCancel }) {
       const [data, setData] = useState(initialData || emptyForm());
       const [submitting, setSubmitting] = useState(false);
       const set = (k, v) => setData(d => ({ ...d, [k]: v }));
 
       const isQ4 = data.quarter === "Q4";
+      const showPart2 = isQ4 && user.role === 'HINDI_CELL';
 
       const handleSubmit = async () => {
-        if (!data.b1_cert_agreed) { alert("कृपया भाग-I के प्रमाण-पत्र बॉक्स को चेक करें।"); return; }
-        if (isQ4 && !data.b2_cert_agreed) { alert("कृपया भाग-II के प्रमाण-पत्र बॉक्स को चेक करें।"); return; }
-
+        // For SAO submission, certificate is handled in modal; but for DEO/AAO we don't require it.
+        // However if DEO is editing a returned report, they might not have certificate.
+        // We'll only require certificate if this is a new DEO submission? Actually certificate only for SAO.
+        // So we skip certificate check here.
         setSubmitting(true);
         const report = { ...data, section_name: user.section_name };
-        
-        if (!initialData) {
-          report.status = "PENDING_AAO";
-          report.timeline = [{ ts: new Date().toISOString(), role: "DEO", name: user.section_name, action: "रिपोर्ट जमा की गई", remark: "" }];
+        // If editing existing (initialData) and user is DEO and status was returned -> set to PENDING_AAO
+        if (initialData && user.role === 'DEO' && (initialData.status === 'AAO_RETURNED' || initialData.status === 'SAO_RETURNED')) {
+          report.status = 'PENDING_AAO';
+          // Add timeline entry
+          const timeline = report.timeline || [];
+          timeline.push({
+            ts: new Date().toISOString(),
+            role: user.role,
+            name: user.section_name,
+            action: "DEO ने वापसी के बाद रिपोर्ट सुधार कर पुनः भेजी",
+            remark: ""
+          });
+          report.timeline = timeline;
         }
         await onSave(report);
         setSubmitting(false);
@@ -394,14 +408,12 @@
 
       return (
         <div style={{ maxWidth: 900, margin: "0 auto", paddingBottom: "40px" }}>
-          
           <div style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "white", padding: "24px", borderRadius: "16px", marginBottom: "24px", textAlign: "center", boxShadow: "0 6px 20px rgba(99,102,241,0.3)" }}>
             <h2 style={{ fontSize: "28px", fontWeight: 800, margin: "0 0 6px 0" }}>🏢 {user.section_name}</h2>
             <p style={{ fontSize: "14px", opacity: 0.9, margin: 0, fontWeight: 600 }}>राजभाषा हिंदी के प्रगामी प्रयोग से संबंधित तिमाही प्रगति रिपोर्ट</p>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            
             <SecCard title="कार्यालय विवरण" icon="📋">
               <Grid cols={2}>
                 <div>
@@ -424,13 +436,12 @@
               </Grid>
             </SecCard>
 
-            {/* ================= PART 1 ================= */}
+            {/* Part 1 */}
             <div style={{ background: "#eef2ff", padding: "10px 16px", borderRadius: "8px", border: "1px solid #6366f1", color: "#3730a3", fontWeight: 800 }}>भाग-I (प्रत्येक तिमाही की समाप्ति पर भरा जाए)</div>
 
             <SecCard title="1 & 2. मंत्री / सचिव स्तर पर पत्राचार" icon="📜">
               <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>1. माननीय मंत्री जी को भेजी गईं फ़ाइलें</h4>
               <Grid><Num label="कुल भेजी गई फ़ाइलें" value={data.b1_s1_total_files} onChange={v => set("b1_s1_total_files", v)} /><Num label="हिंदी में भेजी गईं" value={data.b1_s1_hindi_files} onChange={v => set("b1_s1_hindi_files", v)} /></Grid>
-              
               <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>2. सचिव/समकक्ष स्तर पर बैठकें/फाइलें</h4>
               <Grid><Num label="आयोजित कुल बैठकें" value={data.b1_s2_total_meetings} onChange={v => set("b1_s2_total_meetings", v)} /><Num label="हिंदी में कार्यवाही/कार्यवृत्त" value={data.b1_s2_hindi_minutes} onChange={v => set("b1_s2_hindi_minutes", v)} /></Grid>
               <Grid><Num label="सीधे जारी कुल कागजात" value={data.b1_s2_total_docs} onChange={v => set("b1_s2_total_docs", v)} /><Num label="हिंदी में जारी कागजात" value={data.b1_s2_hindi_docs} onChange={v => set("b1_s2_hindi_docs", v)} /></Grid>
@@ -447,7 +458,7 @@
             </SecCard>
 
             <SecCard title="5. अंग्रेजी पत्रों के उत्तर हिंदी में" icon="✉️">
-              <TblInput headers={["क्षेत्र", "अंग्रेजी में प्राप्त कुल पत्र", "हिंदी में उत्तर दिए गए", "अंग्रेजी में उत्तर दिए गए", "उत्तर अपेक्षित नहीं"]} 
+              <TblInput headers={["क्षेत्र", "अंग्रेजी में प्राप्त कुल पत्र", "हिंदी में उत्तर दिए गए", "अंग्रेजी में उत्तर दिए गए", "उत्तर अपेक्षित नहीं"]}
                 rows={[
                   [{ label: "'क' क्षेत्र" }, { key: "b1_s5_ka_total" }, { key: "b1_s5_ka_hindi_reply" }, { key: "b1_s5_ka_eng_reply" }, { key: "b1_s5_ka_no_reply" }],
                   [{ label: "'ख' क्षेत्र" }, { key: "b1_s5_kha_total" }, { key: "b1_s5_kha_hindi_reply" }, { key: "b1_s5_kha_eng_reply" }, { key: "b1_s5_kha_no_reply" }]
@@ -455,7 +466,7 @@
             </SecCard>
 
             <SecCard title="6. मूल रूप से भेजे गये पत्रों का ब्यौरा" icon="📨">
-              <TblInput headers={["क्षेत्र", "हिंदी में", "अंग्रेजी में", "कुल संख्या"]} 
+              <TblInput headers={["क्षेत्र", "हिंदी में", "अंग्रेजी में", "कुल संख्या"]}
                 rows={[
                   [{ label: "'क' क्षेत्र को" }, { key: "b1_s6_ka_hindi" }, { key: "b1_s6_ka_english" }, { key: "b1_s6_ka_total" }],
                   [{ label: "'ख' क्षेत्र को" }, { key: "b1_s6_kha_hindi" }, { key: "b1_s6_kha_english" }, { key: "b1_s6_kha_total" }],
@@ -471,11 +482,9 @@
             <SecCard title="8 & 9. कार्यशालाएं एवं बैठकें" icon="🤝">
               <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>8. हिंदी कार्यशालाएं</h4>
               <Grid cols={3}><Num label="आयोजित कार्यशालाएं" value={data.b1_s8_workshops} onChange={v => set("b1_s8_workshops", v)} /><Num label="प्रशिक्षित कर्मचारी" value={data.b1_s8_staff} onChange={v => set("b1_s8_staff", v)} /><Num label="प्रशिक्षित अधिकारी" value={data.b1_s8_officers} onChange={v => set("b1_s8_officers", v)} /></Grid>
-
               <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>9. राजभाषा कार्यान्वयन समिति</h4>
               <Grid><Inp type="date" label="(क) बैठक की तिथि" value={data.b1_s9_meeting_date} onChange={v => set("b1_s9_meeting_date", v)} /><Num label="(ख) अधीनस्थ समितियों की संख्या" value={data.b1_s9_sub_office_cmtes} onChange={v => set("b1_s9_sub_office_cmtes", v)} /></Grid>
               <Grid><Num label="(ग) तिमाही में आयोजित बैठकें" value={data.b1_s9_sub_office_meetings} onChange={v => set("b1_s9_sub_office_meetings", v)} /><Radio label="(घ) कार्यसूची/कार्यवृत्त हिंदी में?" value={data.b1_s9_agenda_hindi} onChange={v => set("b1_s9_agenda_hindi", v)} options={["हाँ", "नहीं"]} /></Grid>
-              
               <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>10. हिंदी सलाहकार समिति</h4>
               <Inp type="date" label="बैठक के आयोजन की तिथि" value={data.b1_s10_meeting_date} onChange={v => set("b1_s10_meeting_date", v)} />
             </SecCard>
@@ -486,25 +495,14 @@
               <div style={{marginTop: 10}}><Inp label="iii) हिंदी माध्यम में किये गए अन्य आयोजन" value={data.b1_s11_other} onChange={v => set("b1_s11_other", v)} /></div>
             </SecCard>
 
-            <div style={{ background: "#fef2f2", padding: "20px", borderRadius: "12px", border: "1px solid #fca5a5" }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: "#991b1b", margin: "0 0 12px 0" }}>भाग-I प्रमाण-पत्र</h3>
-              <p style={{ fontSize: 13, color: "#7f1d1d", marginBottom: "16px", lineHeight: 1.5 }}>"मैं यह प्रमाणित करता/करती हूं कि प्रगति रिपोर्ट में दी गई सूचना उपलब्ध अभिलेखों के आधार पर बनाई गई है तथा मेरी जानकारी के अनुसार पूर्णतया सत्य है। यदि किसी स्टेज पर रिपोर्ट में भरे गए आंकड़े असत्य पाए जाते हैं तो कार्रवाई हेतु मामला संज्ञान में लाया जाएगा।"</p>
-              <Grid cols={3}>
-                <Inp label="अध्यक्ष का नाम" value={data.b1_cert_name} onChange={v => set("b1_cert_name", v)} />
-                <Inp label="पदनाम" value={data.b1_cert_desig} onChange={v => set("b1_cert_desig", v)} />
-                <Inp label="फोन नंबर" value={data.b1_cert_phone} onChange={v => set("b1_cert_phone", v)} />
-              </Grid>
-              <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "16px", fontWeight: 700, color: "#991b1b", cursor: "pointer" }}>
-                <input type="checkbox" checked={data.b1_cert_agreed} onChange={e => set("b1_cert_agreed", e.target.checked)} style={{ width: 20, height: 20 }} />
-                मैंने उपर्युक्त प्रमाण-पत्र पढ़ लिया है और मैं इससे सहमत हूँ।
-              </label>
-            </div>
+            {/* Part 1 Certificate – only for SAO? Actually we removed it from form, now handled in modal.
+                But we keep the fields in data for storage. We'll hide the certificate block from form. */}
 
-            {/* ================= PART 2 ================= */}
-            {isQ4 && (
+            {/* ========== PART 2 – only if Hindi Cell and Q4 ========== */}
+            {showPart2 && (
               <>
                 <div style={{ background: "#ecfeff", padding: "10px 16px", borderRadius: "8px", border: "1px solid #06b6d4", color: "#164e63", fontWeight: 800, marginTop: "20px" }}>भाग-II (केवल 31 मार्च को समाप्त तिमाही रिपोर्ट के साथ भरा जाए)</div>
-                
+
                 <SecCard title="1. राजभाषा नियम, 1976 - नियम 10(4)" icon="⚖️">
                   <Radio label="(i) क्या कार्यालय नियम 10(4) के अंतर्गत अधिसूचित है?" value={data.b2_s1_notified} onChange={v => set("b2_s1_notified", v)} options={["हाँ", "नहीं"]} />
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>(ii) नियंत्रणाधीन कार्यालयों की अधिसूचना का विवरण:</h4>
@@ -513,14 +511,14 @@
 
                 <SecCard title="2. कार्मिकों को राजभाषा का ज्ञान" icon="🎓">
                   <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>2(i) अधिकारियों/कर्मचारियों को राजभाषा हिंदी का ज्ञान</h4>
-                  <TblInput headers={["श्रेणी", "कुल संख्या", "अनुसचिवीय", "प्रवीणता प्राप्त", "कार्यसाधक प्राप्त", "प्रशिक्षण ले रहे", "प्रशिक्षण शेष"]} 
+                  <TblInput headers={["श्रेणी", "कुल संख्या", "अनुसचिवीय", "प्रवीणता प्राप्त", "कार्यसाधक प्राप्त", "प्रशिक्षण ले रहे", "प्रशिक्षण शेष"]}
                     rows={[
                       [{ label: "अधिकारी" }, { key: "b2_s2i_off_total" }, { key: "b2_s2i_off_ministerial" }, { key: "b2_s2i_off_pravinta" }, { key: "b2_s2i_off_karyasadhak" }, { key: "b2_s2i_off_training" }, { key: "b2_s2i_off_remaining" }],
                       [{ label: "कर्मचारी" }, { key: "b2_s2i_staff_total" }, { key: "b2_s2i_staff_ministerial" }, { key: "b2_s2i_staff_pravinta" }, { key: "b2_s2i_staff_karyasadhak" }, { key: "b2_s2i_staff_training" }, { key: "b2_s2i_staff_remaining" }]
                     ]} data={data} onChange={set} />
 
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>2(ii) हिंदी आशुलिपि/टंकण का ज्ञान</h4>
-                  <TblInput headers={["श्रेणी", "कुल संख्या", "हिंदी में प्रशिक्षित", "प्रशिक्षित में से हिंदी में काम", "प्रशिक्षण शेष"]} 
+                  <TblInput headers={["श्रेणी", "कुल संख्या", "हिंदी में प्रशिक्षित", "प्रशिक्षित में से हिंदी में काम", "प्रशिक्षण शेष"]}
                     rows={[
                       [{ label: "आशुलिपिक" }, { key: "b2_s2ii_steno_total" }, { key: "b2_s2ii_steno_trained" }, { key: "b2_s2ii_steno_working" }, { key: "b2_s2ii_steno_remaining" }],
                       [{ label: "टंकक/लिपिक/निजी सहायक" }, { key: "b2_s2ii_typist_total" }, { key: "b2_s2ii_typist_trained" }, { key: "b2_s2ii_typist_working" }, { key: "b2_s2ii_typist_remaining" }],
@@ -528,7 +526,7 @@
                     ]} data={data} onChange={set} />
 
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>2(iii) अनुवाद का ज्ञान</h4>
-                  <TblInput headers={["श्रेणी", "अनुवाद कार्य करने वाले कुल", "प्रशिक्षण प्राप्त", "प्रशिक्षण शेष"]} 
+                  <TblInput headers={["श्रेणी", "अनुवाद कार्य करने वाले कुल", "प्रशिक्षण प्राप्त", "प्रशिक्षण शेष"]}
                     rows={[
                       [{ label: "अधिकारी" }, { key: "b2_s2iii_off_total" }, { key: "b2_s2iii_off_trained" }, { key: "b2_s2iii_off_remaining" }],
                       [{ label: "कर्मचारी" }, { key: "b2_s2iii_staff_total" }, { key: "b2_s2iii_staff_trained" }, { key: "b2_s2iii_staff_remaining" }]
@@ -538,13 +536,12 @@
                 <SecCard title="3 & 4. कंप्यूटर टंकण एवं लैपटॉप" icon="💻">
                   <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>3. कंप्यूटर पर हिंदी टंकण प्रशिक्षण</h4>
                   <Grid cols={3}><Num label="कुल अधिकारी/कर्मचारी" value={data.b2_s3_comp_total} onChange={v => set("b2_s3_comp_total", v)} /><Num label="प्रशिक्षितों की संख्या" value={data.b2_s3_comp_trained} onChange={v => set("b2_s3_comp_trained", v)} /><Num label="हिंदी में काम करने वाले" value={data.b2_s3_comp_working} onChange={v => set("b2_s3_comp_working", v)} /></Grid>
-                  
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>4. कंप्यूटर/लैपटॉप विवरण</h4>
                   <Grid cols={3}><Num label="कुल संख्या" value={data.b2_s4_laptop_total} onChange={v => set("b2_s4_laptop_total", v)} /><Num label="यूनिकोड सक्षम" value={data.b2_s4_laptop_unicode} onChange={v => set("b2_s4_laptop_unicode", v)} /><Num label="हिंदी कार्य %" value={data.b2_s4_laptop_pct} onChange={v => set("b2_s4_laptop_pct", v)} /></Grid>
                 </SecCard>
 
                 <SecCard title="5. कोड, मैनुअल, मानकीकृत प्रपत्र" icon="📚">
-                  <TblInput headers={["श्रेणी", "कुल संख्या", "द्विभाषी"]} 
+                  <TblInput headers={["श्रेणी", "कुल संख्या", "द्विभाषी"]}
                     rows={[
                       [{ label: "अधिनियम/कोड/मैनुअल" }, { key: "b2_s5_manual_total" }, { key: "b2_s5_manual_bi" }],
                       [{ label: "मानकीकृत प्रपत्र" }, { key: "b2_s5_form_total" }, { key: "b2_s5_form_bi" }]
@@ -554,7 +551,6 @@
                 <SecCard title="6 & 7. आदेश एवं प्रशिक्षण कार्यक्रम" icon="🏫">
                   <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>6. नियम 8(4) के आदेश</h4>
                   <Grid><Num label="(i) आदेश जारी किए गए कार्मिक" value={data.b2_s6_orders} onChange={v => set("b2_s6_orders", v)} /><Num label="(ii) शेष कार्मिक" value={data.b2_s6_remaining} onChange={v => set("b2_s6_remaining", v)} /></Grid>
-                  
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>7. प्रशिक्षण कार्यक्रम</h4>
                   <Grid><Inp label="प्रशिक्षण कार्यक्रम का नाम" value={data.b2_s7_prog_name} onChange={v => set("b2_s7_prog_name", v)} /><Num label="अवधि (घंटों में)" value={data.b2_s7_duration} onChange={v => set("b2_s7_duration", v)} /></Grid>
                   <div style={{marginTop: 10}}><Grid cols={3}><Num label="हिंदी में दिए गए" value={data.b2_s7_hindi} onChange={v => set("b2_s7_hindi", v)} /><Num label="अंग्रेजी में दिए गए" value={data.b2_s7_eng} onChange={v => set("b2_s7_eng", v)} /><Num label="मिली जुली भाषा में" value={data.b2_s7_mixed} onChange={v => set("b2_s7_mixed", v)} /></Grid></div>
@@ -565,10 +561,8 @@
                   <Grid><Num label="अनुभागों की कुल संख्या" value={data.b2_s8_sec_total} onChange={v => set("b2_s8_sec_total", v)} /><Num label="निरीक्षित अनुभाग" value={data.b2_s8_sec_inspected} onChange={v => set("b2_s8_sec_inspected", v)} /></Grid>
                   <Grid><Num label="अधीनस्थ कार्यालयों की कुल संख्या" value={data.b2_s8_sub_total} onChange={v => set("b2_s8_sub_total", v)} /><Num label="निरीक्षित कार्यालय" value={data.b2_s8_sub_inspected} onChange={v => set("b2_s8_sub_inspected", v)} /></Grid>
                   <div style={{marginTop: 10}}><Num label="हिंदी में कार्य करने हेतु निर्दिष्ट अनुभाग" value={data.b2_s8_hindi_secs} onChange={v => set("b2_s8_hindi_secs", v)} /></div>
-                  
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>9. पत्रिकाओं का प्रकाशन</h4>
                   <Grid cols={3}><Num label="कुल संख्या" value={data.b2_s9_pub_total} onChange={v => set("b2_s9_pub_total", v)} /><Num label="हिंदी में" value={data.b2_s9_pub_hindi} onChange={v => set("b2_s9_pub_hindi", v)} /><Num label="अंग्रेजी में" value={data.b2_s9_pub_eng} onChange={v => set("b2_s9_pub_eng", v)} /></Grid>
-                  
                   <h4 style={{ margin: "20px 0 10px", fontSize: 14 }}>10. हिंदी पुस्तकों की खरीद व्यय</h4>
                   <Grid><Num label="कुल व्यय (₹)" value={data.b2_s10_exp_total} onChange={v => set("b2_s10_exp_total", v)} /><Num label="हिंदी पुस्तकों पर व्यय (₹)" value={data.b2_s10_exp_hindi} onChange={v => set("b2_s10_exp_hindi", v)} /></Grid>
                 </SecCard>
@@ -583,13 +577,13 @@
                         <tr>
                           <td style={{padding: "8px", border: "1px solid #e2e8f0", fontWeight: "bold"}}>11. उप सचिव एवं उच्च</td>
                           {['b2_s11_total', 'b2_s11_know', 'b2_s11_not', 'b2_s11_25', 'b2_s11_50', 'b2_s11_75', 'b2_s11_100', 'b2_s11_full'].map(k => (
-                            <td key={k} style={{padding: 0, border: "1px solid #e2e8f0"}}><input type="number" min="0" value={data[k]} onChange={e => set(k, e.target.value)} style={{width: "100%", padding: "8px", border: "none", textAlign: "center"}} /></td>
+                            <td key={k} style={{padding: 0, border: "1px solid #e2e8f0"}}><input type="number" min="0" step="1" value={data[k] || ""} onChange={e => set(k, e.target.value)} style={{width: "100%", padding: "8px", border: "none", textAlign: "center"}} /></td>
                           ))}
                         </tr>
                         <tr>
                           <td style={{padding: "8px", border: "1px solid #e2e8f0", fontWeight: "bold"}}>12. उप सचिव से नीचे</td>
                           {['b2_s12_total', 'b2_s12_know', 'b2_s12_not', 'b2_s12_25', 'b2_s12_50', 'b2_s12_75', 'b2_s12_100', 'b2_s12_full'].map(k => (
-                            <td key={k} style={{padding: 0, border: "1px solid #e2e8f0"}}><input type="number" min="0" value={data[k]} onChange={e => set(k, e.target.value)} style={{width: "100%", padding: "8px", border: "none", textAlign: "center"}} /></td>
+                            <td key={k} style={{padding: 0, border: "1px solid #e2e8f0"}}><input type="number" min="0" step="1" value={data[k] || ""} onChange={e => set(k, e.target.value)} style={{width: "100%", padding: "8px", border: "none", textAlign: "center"}} /></td>
                           ))}
                         </tr>
                       </tbody>
@@ -598,7 +592,7 @@
                 </SecCard>
 
                 <SecCard title="13. हिंदी के पद" icon="📋">
-                  <TblInput headers={["पदनाम", "HQ में स्वीकृत", "HQ में रिक्त", "अधीनस्थ में स्वीकृत", "अधीनस्थ में रिक्त"]} 
+                  <TblInput headers={["पदनाम", "HQ में स्वीकृत", "HQ में रिक्त", "अधीनस्थ में स्वीकृत", "अधीनस्थ में रिक्त"]}
                     rows={[
                       [{ key: "b2_s13_post", type: "text" }, { key: "b2_s13_hq_sanc" }, { key: "b2_s13_hq_vac" }, { key: "b2_s13_sub_sanc" }, { key: "b2_s13_sub_vac" }]
                     ]} data={data} onChange={set} />
@@ -619,12 +613,15 @@
                   <div style={{marginTop: 10}}><Radio label="(ग) क्या विभागाध्यक्ष ने दोनों बैठकों में भाग लिया?" value={data.b2_s16_hod_attended} onChange={v => set("b2_s16_hod_attended", v)} options={["हाँ", "नहीं"]} /></div>
                 </SecCard>
 
+                {/* Part 2 Certificate – only for Hindi Cell */}
                 <div style={{ background: "#fef2f2", padding: "20px", borderRadius: "12px", border: "1px solid #fca5a5", marginTop: "20px" }}>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "#991b1b", margin: "0 0 12px 0" }}>भाग-II प्रमाण-पत्र</h3>
-                  <Grid cols={3}>
+                  <Grid cols={2}>
                     <Inp label="विभागीय अध्यक्ष का नाम" value={data.b2_cert_name} onChange={v => set("b2_cert_name", v)} />
                     <Inp label="पदनाम" value={data.b2_cert_desig} onChange={v => set("b2_cert_desig", v)} />
                     <Inp label="फोन नंबर" value={data.b2_cert_phone} onChange={v => set("b2_cert_phone", v)} />
+                    <Inp label="तिथि" type="date" value={data.b2_cert_date} onChange={v => set("b2_cert_date", v)} />
+                    <Inp label="स्थान" value={data.b2_cert_place} onChange={v => set("b2_cert_place", v)} />
                   </Grid>
                   <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "16px", fontWeight: 700, color: "#991b1b", cursor: "pointer" }}>
                     <input type="checkbox" checked={data.b2_cert_agreed} onChange={e => set("b2_cert_agreed", e.target.checked)} style={{ width: 20, height: 20 }} />
@@ -637,7 +634,7 @@
 
           <div style={{ marginTop: "30px", display: "flex", gap: "12px" }}>
             {initialData && <button onClick={onCancel} style={{ flex: 0.3, padding: "14px", borderRadius: "12px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer", fontSize: "15px" }}>रद्द करें</button>}
-            <button onClick={handleSubmit} disabled={submitting} 
+            <button onClick={handleSubmit} disabled={submitting}
               style={{ flex: 1, padding: "16px", borderRadius: "12px", border: "none", background: "#10b981", color: "#fff", fontWeight: 800, fontSize: "16px", cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
               {submitting ? 'जमा हो रहा है...' : '✅ रिपोर्ट अंतिम रूप से जमा करें'}
             </button>
@@ -646,30 +643,342 @@
       );
     }
 
-    // ============================================================
-    //  INBOX / DASHBOARD (Action Center)
-    // ============================================================
+    // ========== Hindi Cell Dashboard (Super Admin) ==========
+    function HindiCellDashboard({ reports, sections, onSelectSections, selectedSections, onConsolidate }) {
+      const [selectAll, setSelectAll] = useState(false);
+
+      const handleToggleAll = () => {
+        const allIds = sections.map(s => s.id);
+        if (selectAll) {
+          onSelectSections([]);
+        } else {
+          onSelectSections(allIds);
+        }
+        setSelectAll(!selectAll);
+      };
+
+      const handleToggle = (id) => {
+        if (selectedSections.includes(id)) {
+          onSelectSections(selectedSections.filter(s => s !== id));
+        } else {
+          onSelectSections([...selectedSections, id]);
+        }
+      };
+
+      // Get latest report for each section for current quarter (maybe we need to filter by quarter)
+      const currentQuarter = "Q4"; // default, but we can let user select
+      const currentYear = "2026";
+
+      const getLatestReport = (sectionName) => {
+        const sectionReports = reports.filter(r => r.section_name === sectionName && r.quarter === currentQuarter && r.year === currentYear);
+        if (sectionReports.length === 0) return null;
+        // sort by updated_at descending
+        const sorted = sectionReports.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+        return sorted[0];
+      };
+
+      return (
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", margin: 0 }}>📊 सभी अनुभागों की रिपोर्ट स्थिति</h2>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button onClick={handleToggleAll} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>
+                {selectAll ? "सभी अचयनित करें" : "सभी चुनें"}
+              </button>
+              <button onClick={onConsolidate} disabled={selectedSections.length === 0} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: selectedSections.length === 0 ? "#94a3b8" : "#6366f1", color: "#fff", fontWeight: 700, cursor: selectedSections.length === 0 ? "not-allowed" : "pointer", fontSize: "14px" }}>
+                📄 समेकित रिपोर्ट बनाएँ ({selectedSections.length})
+              </button>
+            </div>
+          </div>
+          <div style={{ overflowX: "auto", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead style={{ background: "#f8fafc" }}>
+                <tr>
+                  <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>चुनें</th>
+                  <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>अनुभाग</th>
+                  <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>रिपोर्ट स्थिति</th>
+                  <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>अंतिम अपडेट</th>
+                  <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>रिपोर्ट ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sections.map(sec => {
+                  const latest = getLatestReport(sec.section_name);
+                  const status = latest ? STATUS[latest.status] : null;
+                  const isSelected = selectedSections.includes(sec.id);
+                  return (
+                    <tr key={sec.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        <input type="checkbox" checked={isSelected} onChange={() => handleToggle(sec.id)} disabled={!latest} style={{ width: 18, height: 18 }} />
+                      </td>
+                      <td style={{ padding: "12px 16px", fontWeight: 600 }}>{sec.section_name}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {status ? (
+                          <span style={{ background: status.bg, color: status.color, padding: "4px 12px", borderRadius: "6px", fontWeight: 600, fontSize: "12px" }}>{status.icon} {status.label}</span>
+                        ) : <span style={{ color: "#94a3b8" }}>रिपोर्ट नहीं</span>}
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#64748b", fontSize: "13px" }}>{latest ? new Date(latest.updated_at).toLocaleDateString('hi-IN') : '-'}</td>
+                      <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: "12px" }}>{latest ? latest.ackId : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== Consolidated Report View (printable) ==========
+    function ConsolidatedReport({ reports, selectedSections, sections, onBack }) {
+      const [consolidatedData, setConsolidatedData] = useState(null);
+
+      useEffect(() => {
+        // Gather all reports for selected sections (latest each)
+        const selectedReports = sections
+          .filter(s => selectedSections.includes(s.id))
+          .map(s => {
+            const sectionReports = reports.filter(r => r.section_name === s.section_name && r.quarter === "Q4" && r.year === "2026");
+            if (sectionReports.length === 0) return null;
+            return sectionReports.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+          })
+          .filter(r => r !== null);
+
+        if (selectedReports.length === 0) {
+          setConsolidatedData(null);
+          return;
+        }
+
+        // Sum numeric fields
+        const sumFields = (fields) => {
+          const result = {};
+          fields.forEach(f => {
+            result[f] = selectedReports.reduce((acc, r) => acc + (parseInt(r[f]) || 0), 0);
+          });
+          return result;
+        };
+
+        const numericFields = [
+          'b1_s1_total_files', 'b1_s1_hindi_files',
+          'b1_s2_total_meetings', 'b1_s2_hindi_minutes', 'b1_s2_total_docs', 'b1_s2_hindi_docs',
+          'b1_s3_total_issued', 'b1_s3_bilingual', 'b1_s3_english_only', 'b1_s3_hindi_only',
+          'b1_s4_total_received', 'b1_s4_no_reply_needed', 'b1_s4_hindi_reply', 'b1_s4_english_reply',
+          'b1_s5_ka_total', 'b1_s5_ka_hindi_reply', 'b1_s5_ka_eng_reply', 'b1_s5_ka_no_reply',
+          'b1_s5_kha_total', 'b1_s5_kha_hindi_reply', 'b1_s5_kha_eng_reply', 'b1_s5_kha_no_reply',
+          'b1_s6_ka_total', 'b1_s6_ka_hindi', 'b1_s6_ka_english',
+          'b1_s6_kha_total', 'b1_s6_kha_hindi', 'b1_s6_kha_english',
+          'b1_s6_ga_total', 'b1_s6_ga_hindi', 'b1_s6_ga_english',
+          'b1_s7_hindi_pages', 'b1_s7_eng_pages', 'b1_s7_total_pages', 'b1_s7_eoffice',
+          'b1_s8_workshops', 'b1_s8_staff', 'b1_s8_officers',
+          'b1_s9_sub_office_cmtes', 'b1_s9_sub_office_meetings',
+        ];
+        const sums = sumFields(numericFields);
+
+        setConsolidatedData({
+          sections: selectedReports.map(r => r.section_name),
+          sums,
+          totalReports: selectedReports.length
+        });
+      }, [reports, selectedSections, sections]);
+
+      if (!consolidatedData) {
+        return (
+          <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 20px" }}>
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, cursor: "pointer", fontSize: "15px" }}>← वापस डैशबोर्ड</button>
+            <p style={{ textAlign: "center", marginTop: "40px", color: "#64748b" }}>चयनित अनुभागों के लिए कोई रिपोर्ट उपलब्ध नहीं है।</p>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, cursor: "pointer", fontSize: "15px" }}>← वापस डैशबोर्ड</button>
+            <button onClick={() => window.print()} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer" }}>🖨️ प्रिंट करें</button>
+          </div>
+          <div style={{ background: "#fff", borderRadius: "16px", padding: "32px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <h1 style={{ fontSize: "24px", fontWeight: 800, textAlign: "center", color: "#1e293b", margin: "0 0 8px" }}>🏛️ समेकित तिमाही प्रगति रिपोर्ट</h1>
+            <p style={{ textAlign: "center", color: "#64748b", marginBottom: "24px" }}>तिमाही: Q4 (जनवरी–मार्च) · वर्ष: 2026</p>
+            <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
+              <strong>चयनित अनुभाग: </strong>
+              {consolidatedData.sections.join(', ')}
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+              <thead>
+                <tr style={{ background: "#f1f5f9" }}>
+                  <th style={{ padding: "10px", border: "1px solid #e2e8f0", textAlign: "left" }}>मद</th>
+                  <th style={{ padding: "10px", border: "1px solid #e2e8f0", textAlign: "right" }}>कुल</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(consolidatedData.sums).map(([key, value]) => {
+                  let label = key;
+                  // map to readable labels
+                  const labelMap = {
+                    'b1_s1_total_files': 'कुल भेजी गई फ़ाइलें',
+                    'b1_s1_hindi_files': 'हिंदी में भेजी गई फ़ाइलें',
+                    'b1_s2_total_meetings': 'कुल बैठकें',
+                    'b1_s2_hindi_minutes': 'हिंदी में कार्यवाही',
+                    'b1_s2_total_docs': 'कुल कागजात',
+                    'b1_s2_hindi_docs': 'हिंदी में कागजात',
+                    'b1_s3_total_issued': 'कुल जारी दस्तावेज',
+                    'b1_s3_bilingual': 'द्विभाषी',
+                    'b1_s3_english_only': 'केवल अंग्रेजी',
+                    'b1_s3_hindi_only': 'केवल हिंदी',
+                    'b1_s4_total_received': 'कुल प्राप्त पत्र',
+                    'b1_s4_no_reply_needed': 'उत्तर अपेक्षित नहीं',
+                    'b1_s4_hindi_reply': 'हिंदी/द्विभाषी में उत्तर',
+                    'b1_s4_english_reply': 'अंग्रेजी में उत्तर',
+                    'b1_s5_ka_total': "'क' क्षेत्र – कुल प्राप्त",
+                    'b1_s5_ka_hindi_reply': "'क' – हिंदी उत्तर",
+                    'b1_s5_ka_eng_reply': "'क' – अंग्रेजी उत्तर",
+                    'b1_s5_ka_no_reply': "'क' – उत्तर नहीं",
+                    'b1_s5_kha_total': "'ख' क्षेत्र – कुल प्राप्त",
+                    'b1_s5_kha_hindi_reply': "'ख' – हिंदी उत्तर",
+                    'b1_s5_kha_eng_reply': "'ख' – अंग्रेजी उत्तर",
+                    'b1_s5_kha_no_reply': "'ख' – उत्तर नहीं",
+                    'b1_s6_ka_total': "'क' – कुल भेजे",
+                    'b1_s6_ka_hindi': "'क' – हिंदी",
+                    'b1_s6_ka_english': "'क' – अंग्रेजी",
+                    'b1_s6_kha_total': "'ख' – कुल भेजे",
+                    'b1_s6_kha_hindi': "'ख' – हिंदी",
+                    'b1_s6_kha_english': "'ख' – अंग्रेजी",
+                    'b1_s6_ga_total': "'ग' – कुल भेजे",
+                    'b1_s6_ga_hindi': "'ग' – हिंदी",
+                    'b1_s6_ga_english': "'ग' – अंग्रेजी",
+                    'b1_s7_hindi_pages': 'हिंदी टिप्पणी पृष्ठ',
+                    'b1_s7_eng_pages': 'अंग्रेजी टिप्पणी पृष्ठ',
+                    'b1_s7_total_pages': 'कुल टिप्पणी पृष्ठ',
+                    'b1_s7_eoffice': 'ई-ऑफिस टिप्पणियाँ',
+                    'b1_s8_workshops': 'कार्यशालाएँ',
+                    'b1_s8_staff': 'प्रशिक्षित कर्मचारी',
+                    'b1_s8_officers': 'प्रशिक्षित अधिकारी',
+                    'b1_s9_sub_office_cmtes': 'अधीनस्थ समितियाँ',
+                    'b1_s9_sub_office_meetings': 'आयोजित बैठकें (अधीनस्थ)',
+                  };
+                  label = labelMap[key] || key;
+                  return (
+                    <tr key={key}>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>{label}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{value}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p style={{ marginTop: "24px", color: "#64748b", fontSize: "13px" }}>नोट: यह समेकित रिपोर्ट {consolidatedData.totalReports} अनुभागों के आंकड़ों का योग है।</p>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== ACTION DASHBOARD (Inbox) with Edit for DEO ==========
     function ActionDashboard({ reports, user, onEdit, setView }) {
-      const r = ROLES[user.role];
       const [selected, setSelected] = useState(null);
       const [remark, setRemark] = useState("");
+      const [showCertModal, setShowCertModal] = useState(false);
+      const [pendingAction, setPendingAction] = useState(null);
+      const toast = useToast();
 
       const myReports = reports.filter(rep => {
         if (user.role === 'DEO') return rep.section_name === user.section_name;
         if (user.role === 'AAO') return rep.section_name === user.section_name && ['PENDING_AAO', 'SAO_RETURNED', 'AAO_APPROVED'].includes(rep.status);
         if (user.role === 'SAO') return rep.section_name === user.section_name && ['PENDING_SAO', 'AAO_RETURNED', 'SAO_APPROVED'].includes(rep.status);
         if (user.role === 'HINDI_CELL') return ['SAO_APPROVED', 'SUBMITTED'].includes(rep.status);
-        return true; 
+        return true;
       });
 
-      const handleStatusChange = async (reportId, nextAction) => {
-        const { error } = await supabase.from('reports').update({ status: nextAction, updated_at: new Date().toISOString() }).eq('id', reportId);
-        if (error) alert("Error: " + error.message); else setSelected(null);
+      const handleStatusChange = async (reportId, nextAction, certData = null) => {
+        try {
+          const updateData = { status: nextAction, updated_at: new Date().toISOString() };
+          if (certData) {
+            // Save certificate fields
+            updateData.b1_cert_name = certData.b1_cert_name;
+            updateData.b1_cert_desig = certData.b1_cert_desig;
+            updateData.b1_cert_phone = certData.b1_cert_phone;
+            updateData.b1_cert_date = certData.b1_cert_date;
+            updateData.b1_cert_place = certData.b1_cert_place;
+            updateData.b1_cert_agreed = certData.b1_cert_agreed;
+          }
+          // Add timeline
+          const { data: existing } = await supabase.from('reports').select('timeline').eq('id', reportId).single();
+          const timeline = existing?.timeline || [];
+          timeline.push({
+            ts: new Date().toISOString(),
+            role: user.role,
+            name: user.section_name,
+            action: `स्थिति बदली: ${nextAction}`,
+            remark: remark || ""
+          });
+          updateData.timeline = timeline;
+
+          const { error } = await supabase.from('reports').update(updateData).eq('id', reportId);
+          if (error) throw error;
+          toast("स्थिति अपडेट की गई", "success");
+          setSelected(null);
+          setShowCertModal(false);
+          setPendingAction(null);
+          setRemark("");
+        } catch (err) {
+          toast(err.message, "error");
+        }
+      };
+
+      const handleActionClick = (report, action) => {
+        if (user.role === 'SAO' && action === 'SAO_APPROVED') {
+          // Show certificate modal
+          setPendingAction({ report, action });
+          setShowCertModal(true);
+        } else {
+          handleStatusChange(report.id, action);
+        }
+      };
+
+      const handleCertConfirm = (certData) => {
+        if (pendingAction) {
+          handleStatusChange(pendingAction.report.id, pendingAction.action, certData);
+        }
       };
 
       if (selected) {
         const st = STATUS[selected.status] || { label: selected.status, bg: "#eee", color: "#333", icon: "📌" };
-        const actionBtns = workflowActionsFor(user.role, selected.status);
+        const actionBtns = (() => {
+          if (user.role === 'DEO' && (selected.status === 'AAO_RETURNED' || selected.status === 'SAO_RETURNED')) {
+            // Show edit button
+            return [{ label: "✏️ संपादित करें", action: "EDIT", grad: "linear-gradient(135deg,#f59e0b,#f97316)" }];
+          }
+          // Normal workflow actions
+          const map = {
+            DEO: {
+              AAO_RETURNED: [{ label: "✅ सुधार कर AAO को पुनः भेजें", action: "PENDING_AAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }],
+            },
+            AAO: {
+              PENDING_AAO: [
+                { label: "✅ SAO को अग्रेषित करें", action: "PENDING_SAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" },
+                { label: "↩️ अनुभाग (DEO) को वापस करें", action: "AAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
+              ],
+              SAO_RETURNED: [
+                { label: "✅ SAO को पुनः भेजें", action: "PENDING_SAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" },
+                { label: "↩️ अनुभाग (DEO) को वापस करें", action: "AAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
+              ],
+            },
+            SAO: {
+              PENDING_SAO: [
+                { label: "✅ हिंदी प्रकोष्ठ को भेजें", action: "SAO_APPROVED", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" },
+                { label: "↩️ AAO को वापस करें", action: "SAO_RETURNED", grad: "linear-gradient(135deg,#f97316,#ef4444)" }
+              ],
+            },
+            HINDI_CELL: {
+              SAO_APPROVED: [
+                { label: "🎉 अंतिम स्वीकृति दें", action: "SUBMITTED", grad: "linear-gradient(135deg,#f59e0b,#10b981)" },
+                { label: "↩️ SAO को वापस करें", action: "SAO_RETURNED", grad: "linear-gradient(135deg,#dc2626,#9f1239)" }
+              ],
+            },
+          };
+          return map[user.role]?.[selected.status] || [];
+        })();
+
+        const isEditable = user.role === 'DEO' && (selected.status === 'AAO_RETURNED' || selected.status === 'SAO_RETURNED');
 
         return (
           <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -686,9 +995,15 @@
                 <div style={{ background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid #cbd5e1" }}>
                   <h3 style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", margin: "0 0 12px 0" }}>⚡ कार्रवाई करें</h3>
                   <textarea value={remark} onChange={e => setRemark(e.target.value)} placeholder="यहां कोई टिप्पणी लिखें (वैकल्पिक)..." style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", marginBottom: "16px", outline: "none", fontFamily: "inherit", fontSize: "14px" }} rows={2} />
-                  <div style={{ display: "flex", gap: "12px" }}>
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                     {actionBtns.map(btn => (
-                      <button key={btn.action} onClick={() => handleStatusChange(selected.id, btn.action)} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: btn.grad, color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: "15px" }}>{btn.label}</button>
+                      <button key={btn.action} onClick={() => {
+                        if (btn.action === 'EDIT') {
+                          onEdit(selected);
+                        } else {
+                          handleActionClick(selected, btn.action);
+                        }
+                      }} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: btn.grad, color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: "15px" }}>{btn.label}</button>
                     ))}
                   </div>
                 </div>
@@ -696,10 +1011,14 @@
                 <div style={{ background: "#f1f5f9", padding: "16px", borderRadius: "10px", color: "#64748b", fontWeight: 600, textAlign: "center", fontSize: "14px" }}>वर्तमान स्थिति में आपके लिए कोई कार्रवाई लंबित नहीं है।</div>
               )}
             </div>
+            {showCertModal && (
+              <CertificateModal report={selected} onConfirm={handleCertConfirm} onCancel={() => { setShowCertModal(false); setPendingAction(null); }} />
+            )}
           </div>
         );
       }
 
+      // Default view: list
       return (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -717,7 +1036,15 @@
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {myReports.map(rep => {
                 const st = STATUS[rep.status] || { label: rep.status, bg: "#eee", color: "#333" };
-                const needsAction = workflowActionsFor(user.role, rep.status).length > 0;
+                const needsAction = (() => {
+                  if (user.role === 'DEO' && (rep.status === 'AAO_RETURNED' || rep.status === 'SAO_RETURNED')) return true;
+                  const map = {
+                    AAO: ['PENDING_AAO', 'SAO_RETURNED'],
+                    SAO: ['PENDING_SAO', 'AAO_RETURNED'],
+                    HINDI_CELL: ['SAO_APPROVED']
+                  };
+                  return map[user.role]?.includes(rep.status) || false;
+                })();
                 return (
                   <div key={rep.id} onClick={() => setSelected(rep)} style={{ background: "#fff", padding: "16px 20px", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }}>
                     <div>
@@ -737,10 +1064,16 @@
       );
     }
 
-    // ============================================================
-    //  MAIN APPLICATION ROUTER
-    // ============================================================
-    function App() { return <AuthProvider><MainApp /></AuthProvider>; }
+    // ========== MAIN APP ==========
+    function App() {
+      return (
+        <ToastProvider>
+          <AuthProvider>
+            <MainApp />
+          </AuthProvider>
+        </ToastProvider>
+      );
+    }
 
     function MainApp() {
       const { user, profile, signOut, loading } = useAuth();
@@ -750,20 +1083,63 @@
     }
 
     function AuthenticatedApp({ user, profile, signOut }) {
-      const { reports, loading } = useReports();
+      const { reports, loading, refetch } = useReports();
       const [view, setView] = useState(profile.role === 'DEO' ? 'form' : 'inbox');
       const [editingReport, setEditingReport] = useState(null);
+      const [sections, setSections] = useState([]);
+      const [selectedSections, setSelectedSections] = useState([]);
+      const [showConsolidated, setShowConsolidated] = useState(false);
+      const toast = useToast();
+
+      // Fetch sections for Hindi Cell
+      useEffect(() => {
+        if (profile.role === 'HINDI_CELL') {
+          supabase.from('sections').select('*').then(({ data, error }) => {
+            if (!error) setSections(data || []);
+          });
+        }
+      }, [profile.role]);
 
       const handleSaveReport = async (reportData) => {
-        if (reportData.id) await supabase.from('reports').update(reportData).eq('id', reportData.id);
-        else await supabase.from('reports').insert([reportData]);
-        setEditingReport(null);
-        setView('inbox');
+        try {
+          if (reportData.id) {
+            // Update existing
+            const { error } = await supabase.from('reports').update(reportData).eq('id', reportData.id);
+            if (error) throw error;
+            toast("रिपोर्ट अपडेट की गई", "success");
+          } else {
+            // New report
+            reportData.status = 'PENDING_AAO';
+            reportData.timeline = [{ ts: new Date().toISOString(), role: profile.role, name: profile.section_name, action: "रिपोर्ट बनाई गई", remark: "" }];
+            const { error } = await supabase.from('reports').insert([reportData]);
+            if (error) throw error;
+            toast("रिपोर्ट सफलतापूर्वक जमा की गई", "success");
+          }
+          setEditingReport(null);
+          setView('inbox');
+          refetch();
+        } catch (err) {
+          toast(err.message, "error");
+        }
       };
 
-      if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><div className="spinner"></div></div>;
+      const handleEdit = (report) => {
+        setEditingReport(report);
+        setView('form');
+      };
+
+      const handleConsolidate = () => {
+        setShowConsolidated(true);
+      };
 
       const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
+
+      // Show consolidated report if requested
+      if (profile.role === 'HINDI_CELL' && showConsolidated) {
+        return (
+          <ConsolidatedReport reports={reports} selectedSections={selectedSections} sections={sections} onBack={() => setShowConsolidated(false)} />
+        );
+      }
 
       return (
         <div>
@@ -774,6 +1150,9 @@
               {profile.role === 'DEO' && (
                 <button onClick={() => setView('form')} style={{ background: view === 'form' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📝 नई रिपोर्ट</button>
               )}
+              {profile.role === 'HINDI_CELL' && (
+                <button onClick={() => setView('dashboard')} style={{ background: view === 'dashboard' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📊 सभी अनुभाग</button>
+              )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <span style={{ color: "white", fontSize: "13px", fontWeight: 700, background: "rgba(0,0,0,0.2)", padding: "6px 14px", borderRadius: "20px" }}>{roleTheme.label}</span>
@@ -782,8 +1161,21 @@
           </nav>
 
           <main style={{ padding: "30px 20px 80px" }}>
-            {view === 'form' && <ReportForm user={profile} reports={reports} initialData={editingReport} onSave={handleSaveReport} onCancel={() => setView('inbox')} />}
-            {view === 'inbox' && <ActionDashboard reports={reports} user={profile} setView={setView} />}
+            {view === 'form' && (
+              <ReportForm user={profile} reports={reports} initialData={editingReport} onSave={handleSaveReport} onCancel={() => { setView('inbox'); setEditingReport(null); }} />
+            )}
+            {view === 'inbox' && (
+              <ActionDashboard reports={reports} user={profile} onEdit={handleEdit} setView={setView} />
+            )}
+            {view === 'dashboard' && profile.role === 'HINDI_CELL' && (
+              <HindiCellDashboard
+                reports={reports}
+                sections={sections}
+                selectedSections={selectedSections}
+                onSelectSections={setSelectedSections}
+                onConsolidate={handleConsolidate}
+              />
+            )}
           </main>
         </div>
       );
