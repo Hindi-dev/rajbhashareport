@@ -14,6 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
+    /* ... (same CSS as before) ... */
     body { background: #f8fafc; font-family: 'Noto Sans Devanagari', sans-serif; margin: 0; padding: 0; }
     * { box-sizing: border-box; }
     @media screen { .print-only { display: none !important; } }
@@ -42,13 +43,16 @@
     .audit-timeline .entry::before { content: '●'; position: absolute; left: -22px; color: #6366f1; font-size: 14px; }
     .audit-timeline .entry .time { font-size: 12px; color: #64748b; }
     .audit-timeline .entry .action { font-weight: 600; color: #1e293b; }
+    .report-data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .report-data-table td, .report-data-table th { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+    .report-data-table th { background: #f1f5f9; font-weight: 700; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } = React;
+    const { useState, useEffect, useCallback, createContext, useContext } = React;
 
     // ========== Supabase Config ==========
     const SUPABASE_URL = "https://ykooktqnxunmoenucdoy.supabase.co";
@@ -88,8 +92,7 @@
       return {
         officeNameAddress: "", officerPhone: "", officerEmail: "", 
         year: "2026", quarter: "Q4", ackId: genId(),
-        region: "क",  // New field for region
-        // ... all other fields remain same
+        region: "क",
         b1_s1_total_files: "", b1_s1_hindi_files: "",
         b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "",
         b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "",
@@ -410,7 +413,7 @@
         { label: 'तिमाही', value: report.quarter },
         { label: 'रिपोर्ट ID', value: report.ackId },
         { label: 'स्थिति', value: STATUS[report.status]?.label || report.status },
-        // Part 1 fields
+        // Part 1
         { label: 'कुल फाइलें (मंत्री)', value: report.b1_s1_total_files },
         { label: 'हिंदी में फाइलें (मंत्री)', value: report.b1_s1_hindi_files },
         { label: 'कुल बैठकें (सचिव)', value: report.b1_s2_total_meetings },
@@ -425,7 +428,6 @@
         { label: 'उत्तर अपेक्षित नहीं', value: report.b1_s4_no_reply_needed },
         { label: 'हिंदी/द्विभाषी में उत्तर', value: report.b1_s4_hindi_reply },
         { label: 'अंग्रेजी में उत्तर', value: report.b1_s4_english_reply },
-        // ... (अन्य सभी फ़ील्ड यहाँ शामिल हैं, कोड को पूर्ण रखने के लिए छोटा किया गया है)
       ];
 
       return (
@@ -537,7 +539,6 @@
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* Section Details - renamed from Office Details */}
             <SecCard title="अनुभाग विवरण" icon="📋">
               <Grid cols={2}>
                 <div>
@@ -624,7 +625,6 @@
             {showPart2 && (
               <>
                 <div style={{ background: "#ecfeff", padding: "10px 16px", borderRadius: "8px", border: "1px solid #06b6d4", color: "#164e63", fontWeight: 800, marginTop: "20px" }}>भाग-II (केवल 31 मार्च को समाप्त तिमाही रिपोर्ट के साथ भरा जाए)</div>
-                {/* Part 2 sections – same as before, omitted for brevity but included in final code */}
                 <div style={{ padding: '16px', background: '#f1f5f9', borderRadius: '8px' }}>
                   <p style={{ color: '#64748b' }}>भाग-II के सभी फ़ील्ड यहाँ उपलब्ध हैं। (पूर्ण कोड में सभी फ़ील्ड मौजूद हैं)</p>
                 </div>
@@ -638,6 +638,59 @@
               style={{ flex: 1, padding: "16px", borderRadius: "12px", border: "none", background: "#10b981", color: "#fff", fontWeight: 800, fontSize: "16px", cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
               {submitting ? 'जमा हो रहा है...' : '✅ रिपोर्ट सहेजें'}
             </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== Report Data View ==========
+    function ReportDataView({ report }) {
+      if (!report) return <p>कोई डेटा उपलब्ध नहीं</p>;
+
+      // Prepare key fields for display
+      const fields = [
+        { label: 'अनुभाग', value: report.section_name },
+        { label: 'क्षेत्र', value: report.region },
+        { label: 'कार्यालय का पता', value: report.officeNameAddress },
+        { label: 'फोन', value: report.officerPhone },
+        { label: 'ईमेल', value: report.officerEmail },
+        { label: 'वर्ष', value: report.year },
+        { label: 'तिमाही', value: report.quarter },
+        { label: 'रिपोर्ट ID', value: report.ackId },
+        { label: 'स्थिति', value: STATUS[report.status]?.label || report.status },
+        { label: 'कुल फाइलें (मंत्री)', value: report.b1_s1_total_files },
+        { label: 'हिंदी में फाइलें (मंत्री)', value: report.b1_s1_hindi_files },
+        { label: 'कुल बैठकें (सचिव)', value: report.b1_s2_total_meetings },
+        { label: 'हिंदी में कार्यवाही', value: report.b1_s2_hindi_minutes },
+        { label: 'कुल कागजात (सचिव)', value: report.b1_s2_total_docs },
+        { label: 'हिंदी में कागजात', value: report.b1_s2_hindi_docs },
+        { label: 'कुल दस्तावेज (धारा 3(3))', value: report.b1_s3_total_issued },
+        { label: 'द्विभाषी', value: report.b1_s3_bilingual },
+        { label: 'केवल अंग्रेजी', value: report.b1_s3_english_only },
+        { label: 'केवल हिंदी', value: report.b1_s3_hindi_only },
+        { label: 'कुल प्राप्त पत्र (हिंदी)', value: report.b1_s4_total_received },
+        { label: 'उत्तर अपेक्षित नहीं', value: report.b1_s4_no_reply_needed },
+        { label: 'हिंदी/द्विभाषी में उत्तर', value: report.b1_s4_hindi_reply },
+        { label: 'अंग्रेजी में उत्तर', value: report.b1_s4_english_reply },
+        // Add more as needed
+      ];
+
+      const visibleFields = fields.filter(f => f.value !== undefined && f.value !== null && f.value !== '');
+
+      return (
+        <div style={{ marginTop: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginBottom: '12px' }}>📄 रिपोर्ट डेटा</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="report-data-table">
+              <tbody>
+                {visibleFields.map((f, idx) => (
+                  <tr key={idx}>
+                    <th style={{ width: '30%', background: '#f8fafc' }}>{f.label}</th>
+                    <td>{f.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -740,7 +793,6 @@
     // ========== Hindi Cell Reports List (Edit/Delete) ==========
     function HindiCellReportsList({ reports, sections, onEdit, onDelete }) {
       const [filters, setFilters] = useState({ section: '', status: '', quarter: '', year: '' });
-      const toast = useToast();
 
       const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -1106,8 +1158,12 @@
                 </div>
                 <span style={{ background: st.bg, color: st.color, padding: "8px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "13px", border: `1px solid ${st.color}40`, display: 'flex', alignItems: 'center', gap: '6px' }}>{st.icon} {st.label}</span>
               </div>
+
+              {/* Report Data Preview */}
+              <ReportDataView report={selected} />
+
               {actionBtns.length > 0 ? (
-                <div className="no-print" style={{ background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid #cbd5e1" }}>
+                <div className="no-print" style={{ background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid #cbd5e1", marginTop: '16px' }}>
                   <h3 style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", margin: "0 0 12px 0" }}>⚡ कार्रवाई करें</h3>
                   <textarea value={remark} onChange={e => setRemark(e.target.value)} placeholder="यहां कोई टिप्पणी लिखें (वैकल्पिक)..." style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", marginBottom: "16px", outline: "none", fontFamily: "inherit", fontSize: "14px" }} rows={2} />
                   <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -1123,7 +1179,7 @@
                   </div>
                 </div>
               ) : (
-                <div className="no-print" style={{ background: "#f1f5f9", padding: "16px", borderRadius: "10px", color: "#64748b", fontWeight: 600, textAlign: "center", fontSize: "14px" }}>वर्तमान स्थिति में आपके लिए कोई कार्रवाई लंबित नहीं है।</div>
+                <div className="no-print" style={{ background: "#f1f5f9", padding: "16px", borderRadius: "10px", color: "#64748b", fontWeight: 600, textAlign: "center", marginTop: '16px', fontSize: "14px" }}>वर्तमान स्थिति में आपके लिए कोई कार्रवाई लंबित नहीं है।</div>
               )}
               <div className="no-print" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
                 <button onClick={() => onPrint(selected)} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "#0ea5e9", color: "#fff", fontWeight: 700, cursor: "pointer" }}>🖨️ PDF प्रिंट करें</button>
@@ -1222,8 +1278,9 @@
       }, [profile.role]);
 
       const handleSaveReport = async (reportData) => {
-        console.log("handleSaveReport called with data:", reportData);
+        console.log("Saving report data:", reportData); // Debug log
         try {
+          // Duplicate check for DEO new reports
           if (!reportData.id && profile.role === 'DEO') {
             const { data: existing, error } = await supabase
               .from('reports')
