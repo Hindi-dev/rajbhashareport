@@ -30,6 +30,8 @@
     .toast-error { background: #dc2626; }
     .toast-success { background: #16a34a; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: center; }
+    .filter-bar select, .filter-bar input { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; background: #fff; }
   </style>
 </head>
 <body>
@@ -38,12 +40,12 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } = React;
 
-    // Supabase config
+    // ========== Supabase Config ==========
     const SUPABASE_URL = "https://ykooktqnxunmoenucdoy.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Wo14uG3EowORP_eHV7SMlw_o1HLqU0f";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Constants
+    // ========== Constants ==========
     const ROLES = {
       DEO: { label: "DEO/Clerk", icon: "🏢", color: "#6366f1", bg: "#eef2ff" },
       AAO: { label: "AAO", icon: "🔎", color: "#0ea5e9", bg: "#f0f9ff" },
@@ -117,7 +119,7 @@
       };
     }
 
-    // Toast context
+    // ========== Toast Context ==========
     const ToastContext = createContext(null);
     function ToastProvider({ children }) {
       const [toasts, setToasts] = useState([]);
@@ -139,7 +141,7 @@
     }
     function useToast() { return useContext(ToastContext); }
 
-    // Auth Context
+    // ========== Auth Context ==========
     const AuthContext = createContext(null);
     function AuthProvider({ children }) {
       const [user, setUser] = useState(null);
@@ -182,7 +184,7 @@
     }
     function useAuth() { return useContext(AuthContext); }
 
-    // Data hook
+    // ========== Data Hook ==========
     function useReports() {
       const [reports, setReports] = useState([]);
       const [loading, setLoading] = useState(true);
@@ -278,7 +280,7 @@
       </div>
     );
 
-    // ========== Certificate Modal (for SAO submission) ==========
+    // ========== Certificate Modal ==========
     function CertificateModal({ report, onConfirm, onCancel }) {
       const [cert, setCert] = useState({
         b1_cert_name: report.b1_cert_name || "",
@@ -366,7 +368,7 @@
       );
     }
 
-    // ========== REPORT FORM ==========
+    // ========== Report Form ==========
     function ReportForm({ user, reports, initialData, onSave, onCancel }) {
       const [data, setData] = useState(initialData || emptyForm());
       const [submitting, setSubmitting] = useState(false);
@@ -378,7 +380,7 @@
       const handleSubmit = async () => {
         setSubmitting(true);
         try {
-          const report = { ...data, section_name: user.section_name };
+          const report = { ...data, section_name: data.section_name || user.section_name };
           if (initialData && user.role === 'DEO' && (initialData.status === 'AAO_RETURNED' || initialData.status === 'SAO_RETURNED')) {
             report.status = 'PENDING_AAO';
             const timeline = report.timeline || [];
@@ -387,6 +389,18 @@
               role: user.role,
               name: user.section_name,
               action: "DEO ने वापसी के बाद रिपोर्ट सुधार कर पुनः भेजी",
+              remark: ""
+            });
+            report.timeline = timeline;
+          }
+          // If editing by Hindi Cell, add timeline entry
+          if (initialData && user.role === 'HINDI_CELL') {
+            const timeline = report.timeline || [];
+            timeline.push({
+              ts: new Date().toISOString(),
+              role: user.role,
+              name: user.section_name,
+              action: "हिंदी प्रकोष्ठ द्वारा संपादित",
               remark: ""
             });
             report.timeline = timeline;
@@ -402,7 +416,7 @@
       return (
         <div style={{ maxWidth: 900, margin: "0 auto", paddingBottom: "40px" }}>
           <div style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "white", padding: "24px", borderRadius: "16px", marginBottom: "24px", textAlign: "center", boxShadow: "0 6px 20px rgba(99,102,241,0.3)" }}>
-            <h2 style={{ fontSize: "28px", fontWeight: 800, margin: "0 0 6px 0" }}>🏢 {user.section_name}</h2>
+            <h2 style={{ fontSize: "28px", fontWeight: 800, margin: "0 0 6px 0" }}>🏢 {data.section_name || user.section_name}</h2>
             <p style={{ fontSize: "14px", opacity: 0.9, margin: 0, fontWeight: 600 }}>राजभाषा हिंदी के प्रगामी प्रयोग से संबंधित तिमाही प्रगति रिपोर्ट</p>
           </div>
 
@@ -488,9 +502,9 @@
               <div style={{marginTop: 10}}><Inp label="iii) हिंदी माध्यम में किये गए अन्य आयोजन" value={data.b1_s11_other} onChange={v => set("b1_s11_other", v)} /></div>
             </SecCard>
 
-            {/* Part 1 Certificate is hidden from form - only shown in modal for SAO */}
+            {/* Part 1 Certificate hidden from form */}
 
-            {/* ========== PART 2 – only if Hindi Cell and Q4 ========== */}
+            {/* ========== PART 2 ========== */}
             {showPart2 && (
               <>
                 <div style={{ background: "#ecfeff", padding: "10px 16px", borderRadius: "8px", border: "1px solid #06b6d4", color: "#164e63", fontWeight: 800, marginTop: "20px" }}>भाग-II (केवल 31 मार्च को समाप्त तिमाही रिपोर्ट के साथ भरा जाए)</div>
@@ -605,7 +619,6 @@
                   <div style={{marginTop: 10}}><Radio label="(ग) क्या विभागाध्यक्ष ने दोनों बैठकों में भाग लिया?" value={data.b2_s16_hod_attended} onChange={v => set("b2_s16_hod_attended", v)} options={["हाँ", "नहीं"]} /></div>
                 </SecCard>
 
-                {/* Part 2 Certificate */}
                 <div style={{ background: "#fef2f2", padding: "20px", borderRadius: "12px", border: "1px solid #fca5a5", marginTop: "20px" }}>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "#991b1b", margin: "0 0 12px 0" }}>भाग-II प्रमाण-पत्र</h3>
                   <Grid cols={2}>
@@ -628,16 +641,27 @@
             {initialData && <button onClick={onCancel} style={{ flex: 0.3, padding: "14px", borderRadius: "12px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer", fontSize: "15px" }}>रद्द करें</button>}
             <button onClick={handleSubmit} disabled={submitting}
               style={{ flex: 1, padding: "16px", borderRadius: "12px", border: "none", background: "#10b981", color: "#fff", fontWeight: 800, fontSize: "16px", cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
-              {submitting ? 'जमा हो रहा है...' : '✅ रिपोर्ट अंतिम रूप से जमा करें'}
+              {submitting ? 'जमा हो रहा है...' : '✅ रिपोर्ट सहेजें'}
             </button>
           </div>
         </div>
       );
     }
 
-    // ========== Hindi Cell Dashboard (Super Admin) ==========
+    // ========== Hindi Cell Dashboard (Status & Consolidation) ==========
     function HindiCellDashboard({ reports, sections, onSelectSections, selectedSections, onConsolidate }) {
       const [selectAll, setSelectAll] = useState(false);
+      const getCurrentQuarterYear = () => {
+        if (reports.length === 0) return { quarter: "Q4", year: "2026" };
+        const sorted = [...reports].sort((a,b) => {
+          if (a.year !== b.year) return b.year - a.year;
+          const qOrder = { Q1:1, Q2:2, Q3:3, Q4:4 };
+          return qOrder[b.quarter] - qOrder[a.quarter];
+        });
+        return { quarter: sorted[0].quarter, year: sorted[0].year };
+      };
+
+      const { quarter: currentQuarter, year: currentYear } = getCurrentQuarterYear();
 
       const handleToggleAll = () => {
         const allIds = sections.map(s => s.id);
@@ -657,9 +681,6 @@
         }
       };
 
-      const currentQuarter = "Q4";
-      const currentYear = "2026";
-
       const getLatestReport = (sectionName) => {
         const sectionReports = reports.filter(r => r.section_name === sectionName && r.quarter === currentQuarter && r.year === currentYear);
         if (sectionReports.length === 0) return null;
@@ -670,7 +691,9 @@
       return (
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", margin: 0 }}>📊 सभी अनुभागों की रिपोर्ट स्थिति</h2>
+            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", margin: 0 }}>
+              📊 सभी अनुभागों की रिपोर्ट स्थिति ({currentQuarter} {currentYear})
+            </h2>
             <div style={{ display: "flex", gap: "12px" }}>
               <button onClick={handleToggleAll} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>
                 {selectAll ? "सभी अचयनित करें" : "सभी चुनें"}
@@ -719,15 +742,115 @@
       );
     }
 
-    // ========== Consolidated Report View ==========
+    // ========== Hindi Cell Reports List (Edit/Delete) ==========
+    function HindiCellReportsList({ reports, sections, onEdit, onDelete }) {
+      const [filters, setFilters] = useState({ section: '', status: '', quarter: '', year: '' });
+      const toast = useToast();
+
+      const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+      };
+
+      const filteredReports = reports.filter(r => {
+        if (filters.section && r.section_name.toLowerCase() !== filters.section.toLowerCase()) return false;
+        if (filters.status && r.status !== filters.status) return false;
+        if (filters.quarter && r.quarter !== filters.quarter) return false;
+        if (filters.year && r.year !== filters.year) return false;
+        return true;
+      });
+
+      const handleDelete = (id, sectionName) => {
+        if (window.confirm(`क्या आप वाकई ${sectionName} की इस रिपोर्ट को हटाना चाहते हैं?`)) {
+          onDelete(id);
+        }
+      };
+
+      return (
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", marginBottom: "20px" }}>📋 सभी रिपोर्टें (संपादन/हटाने हेतु)</h2>
+          <div className="filter-bar">
+            <select value={filters.section} onChange={e => handleFilterChange('section', e.target.value)}>
+              <option value="">सभी अनुभाग</option>
+              {sections.map(s => <option key={s.id} value={s.section_name}>{s.section_name}</option>)}
+            </select>
+            <select value={filters.status} onChange={e => handleFilterChange('status', e.target.value)}>
+              <option value="">सभी स्थितियाँ</option>
+              {Object.keys(STATUS).map(key => <option key={key} value={key}>{STATUS[key].label}</option>)}
+            </select>
+            <select value={filters.quarter} onChange={e => handleFilterChange('quarter', e.target.value)}>
+              <option value="">सभी तिमाहियाँ</option>
+              {QUARTERS.map(q => <option key={q.id} value={q.id}>{q.label}</option>)}
+            </select>
+            <select value={filters.year} onChange={e => handleFilterChange('year', e.target.value)}>
+              <option value="">सभी वर्ष</option>
+              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <button onClick={() => setFilters({ section: '', status: '', quarter: '', year: '' })} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 600, cursor: "pointer" }}>
+              फ़िल्टर रीसेट करें
+            </button>
+          </div>
+          {filteredReports.length === 0 ? (
+            <p style={{ color: "#64748b", textAlign: "center" }}>कोई रिपोर्ट नहीं मिली।</p>
+          ) : (
+            <div style={{ overflowX: "auto", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <thead style={{ background: "#f8fafc" }}>
+                  <tr>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>अनुभाग</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>तिमाही</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>वर्ष</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>स्थिति</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>अंतिम अपडेट</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.map(rep => {
+                    const st = STATUS[rep.status] || { label: rep.status, bg: "#eee", color: "#333" };
+                    return (
+                      <tr key={rep.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        <td style={{ padding: "12px 16px", fontWeight: 600 }}>{rep.section_name}</td>
+                        <td style={{ padding: "12px 16px" }}>{rep.quarter}</td>
+                        <td style={{ padding: "12px 16px" }}>{rep.year}</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{ background: st.bg, color: st.color, padding: "4px 12px", borderRadius: "6px", fontWeight: 600, fontSize: "12px" }}>{st.label}</span>
+                        </td>
+                        <td style={{ padding: "12px 16px", color: "#64748b", fontSize: "13px" }}>{new Date(rep.updated_at).toLocaleString('hi-IN')}</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <button onClick={() => onEdit(rep)} style={{ background: "#6366f1", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer", marginRight: "8px" }}>✏️ संपादित करें</button>
+                          <button onClick={() => handleDelete(rep.id, rep.section_name)} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer" }}>🗑️ हटाएँ</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ========== Consolidated Report ==========
     function ConsolidatedReport({ reports, selectedSections, sections, onBack }) {
       const [consolidatedData, setConsolidatedData] = useState(null);
+      const getCurrentQuarterYear = () => {
+        if (reports.length === 0) return { quarter: "Q4", year: "2026" };
+        const sorted = [...reports].sort((a,b) => {
+          if (a.year !== b.year) return b.year - a.year;
+          const qOrder = { Q1:1, Q2:2, Q3:3, Q4:4 };
+          return qOrder[b.quarter] - qOrder[a.quarter];
+        });
+        return { quarter: sorted[0].quarter, year: sorted[0].year };
+      };
+
+      const { quarter: currentQuarter, year: currentYear } = getCurrentQuarterYear();
 
       useEffect(() => {
         const selectedReports = sections
           .filter(s => selectedSections.includes(s.id))
           .map(s => {
-            const sectionReports = reports.filter(r => r.section_name === s.section_name && r.quarter === "Q4" && r.year === "2026");
+            const sectionReports = reports.filter(r => r.section_name === s.section_name && r.quarter === currentQuarter && r.year === currentYear);
             if (sectionReports.length === 0) return null;
             return sectionReports.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
           })
@@ -765,9 +888,11 @@
         setConsolidatedData({
           sections: selectedReports.map(r => r.section_name),
           sums,
-          totalReports: selectedReports.length
+          totalReports: selectedReports.length,
+          quarter: currentQuarter,
+          year: currentYear
         });
-      }, [reports, selectedSections, sections]);
+      }, [reports, selectedSections, sections, currentQuarter, currentYear]);
 
       if (!consolidatedData) {
         return (
@@ -786,7 +911,7 @@
           </div>
           <div style={{ background: "#fff", borderRadius: "16px", padding: "32px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
             <h1 style={{ fontSize: "24px", fontWeight: 800, textAlign: "center", color: "#1e293b", margin: "0 0 8px" }}>🏛️ समेकित तिमाही प्रगति रिपोर्ट</h1>
-            <p style={{ textAlign: "center", color: "#64748b", marginBottom: "24px" }}>तिमाही: Q4 (जनवरी–मार्च) · वर्ष: 2026</p>
+            <p style={{ textAlign: "center", color: "#64748b", marginBottom: "24px" }}>तिमाही: {consolidatedData.quarter} · वर्ष: {consolidatedData.year}</p>
             <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
               <strong>चयनित अनुभाग: </strong>
               {consolidatedData.sections.join(', ')}
@@ -858,7 +983,7 @@
       );
     }
 
-    // ========== ACTION DASHBOARD (Inbox) ==========
+    // ========== Action Dashboard (Inbox) ==========
     function ActionDashboard({ reports, user, onEdit, setView }) {
       const [selected, setSelected] = useState(null);
       const [remark, setRemark] = useState("");
@@ -1041,7 +1166,7 @@
       );
     }
 
-    // ========== MAIN APP ==========
+    // ========== Main App ==========
     function App() {
       return (
         <ToastProvider>
@@ -1066,7 +1191,7 @@
       const [sections, setSections] = useState([]);
       const [selectedSections, setSelectedSections] = useState([]);
       const [showConsolidated, setShowConsolidated] = useState(false);
-      const toast = useToast(); // ✅ fixed
+      const toast = useToast();
 
       useEffect(() => {
         if (profile.role === 'HINDI_CELL') {
@@ -1079,6 +1204,27 @@
       const handleSaveReport = async (reportData) => {
         console.log("handleSaveReport called with data:", reportData);
         try {
+          // Check for duplicate only for new reports by DEO
+          if (!reportData.id && profile.role === 'DEO') {
+            const { data: existing, error } = await supabase
+              .from('reports')
+              .select('id, status')
+              .eq('section_name', reportData.section_name)
+              .eq('quarter', reportData.quarter)
+              .eq('year', reportData.year)
+              .neq('status', 'AAO_RETURNED')
+              .neq('status', 'SAO_RETURNED');
+            if (error) throw error;
+            if (existing && existing.length > 0) {
+              // If there is any report that is not returned, prevent submission
+              const hasActive = existing.some(r => r.status !== 'AAO_RETURNED' && r.status !== 'SAO_RETURNED');
+              if (hasActive) {
+                throw new Error("आपकी रिपोर्ट पहले ही जमा हो चुकी है। धन्यवाद");
+              }
+            }
+          }
+
+          reportData.updated_at = new Date().toISOString();
           if (reportData.id) {
             const { error } = await supabase.from('reports').update(reportData).eq('id', reportData.id);
             if (error) throw error;
@@ -1114,6 +1260,18 @@
         setShowConsolidated(true);
       };
 
+      const handleDeleteReport = async (id) => {
+        try {
+          const { error } = await supabase.from('reports').delete().eq('id', id);
+          if (error) throw error;
+          if (typeof toast === 'function') toast("रिपोर्ट हटा दी गई", "success");
+          refetch();
+        } catch (err) {
+          console.error("Delete error:", err);
+          if (typeof toast === 'function') toast(err.message || "हटाने में त्रुटि", "error");
+        }
+      };
+
       const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
 
       if (profile.role === 'HINDI_CELL' && showConsolidated) {
@@ -1121,6 +1279,8 @@
           <ConsolidatedReport reports={reports} selectedSections={selectedSections} sections={sections} onBack={() => setShowConsolidated(false)} />
         );
       }
+
+      const isHindiCell = profile.role === 'HINDI_CELL';
 
       return (
         <div>
@@ -1131,8 +1291,11 @@
               {profile.role === 'DEO' && (
                 <button onClick={() => setView('form')} style={{ background: view === 'form' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📝 नई रिपोर्ट</button>
               )}
-              {profile.role === 'HINDI_CELL' && (
-                <button onClick={() => setView('dashboard')} style={{ background: view === 'dashboard' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📊 सभी अनुभाग</button>
+              {isHindiCell && (
+                <>
+                  <button onClick={() => setView('dashboard')} style={{ background: view === 'dashboard' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📊 स्थिति</button>
+                  <button onClick={() => setView('allReports')} style={{ background: view === 'allReports' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📋 सभी रिपोर्टें</button>
+                </>
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -1148,13 +1311,21 @@
             {view === 'inbox' && (
               <ActionDashboard reports={reports} user={profile} onEdit={handleEdit} setView={setView} />
             )}
-            {view === 'dashboard' && profile.role === 'HINDI_CELL' && (
+            {view === 'dashboard' && isHindiCell && (
               <HindiCellDashboard
                 reports={reports}
                 sections={sections}
                 selectedSections={selectedSections}
                 onSelectSections={setSelectedSections}
                 onConsolidate={handleConsolidate}
+              />
+            )}
+            {view === 'allReports' && isHindiCell && (
+              <HindiCellReportsList
+                reports={reports}
+                sections={sections}
+                onEdit={handleEdit}
+                onDelete={handleDeleteReport}
               />
             )}
           </main>
