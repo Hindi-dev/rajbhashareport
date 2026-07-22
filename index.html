@@ -25,7 +25,6 @@
     }
     .spinner { border: 4px solid #f3f4f6; border-top: 4px solid #6366f1; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;}
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    /* Toast */
     .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
     .toast { background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-weight: 600; font-size: 14px; animation: slideIn 0.3s ease; }
     .toast-error { background: #dc2626; }
@@ -73,11 +72,9 @@
 
     function genId() { return `RAJ-${Date.now().toString(36).toUpperCase().slice(-7)}`; }
 
-    // Empty form (with all fields, including new cert date/place)
     function emptyForm() {
       return {
         officeNameAddress: "", officerPhone: "", officerEmail: "", year: "2026", quarter: "Q4", ackId: genId(),
-        // Part 1
         b1_s1_total_files: "", b1_s1_hindi_files: "",
         b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "",
         b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "",
@@ -92,9 +89,7 @@
         b1_s9_meeting_date: "", b1_s9_sub_office_cmtes: "", b1_s9_sub_office_meetings: "", b1_s9_agenda_hindi: "हाँ",
         b1_s10_meeting_date: "",
         b1_s11_innovation: "", b1_s11_special: "", b1_s11_other: "",
-        // Part 1 Certificate (now also date/place)
         b1_cert_name: "", b1_cert_desig: "", b1_cert_phone: "", b1_cert_date: "", b1_cert_place: "", b1_cert_agreed: false,
-        // Part 2 (only for Hindi Cell, Q4)
         b2_s1_notified: "हाँ", b2_s1_sub_total: "", b2_s1_sub_notified: "", b2_s1_sub_action: "",
         b2_s2i_off_total: "", b2_s2i_off_ministerial: "", b2_s2i_off_pravinta: "", b2_s2i_off_karyasadhak: "", b2_s2i_off_training: "", b2_s2i_off_remaining: "",
         b2_s2i_staff_total: "", b2_s2i_staff_ministerial: "", b2_s2i_staff_pravinta: "", b2_s2i_staff_karyasadhak: "", b2_s2i_staff_training: "", b2_s2i_staff_remaining: "",
@@ -118,7 +113,6 @@
         b2_s15_divas: "", b2_s15_seminar: "", b2_s15_other: "", b2_s15_innovation: "",
         b2_s16_tolic_member: "हाँ", b2_s16_last_meeting: "", b2_s16_hod_attended: "हाँ",
         b2_cert_name: "", b2_cert_desig: "", b2_cert_phone: "", b2_cert_date: "", b2_cert_place: "", b2_cert_agreed: false,
-        // Timeline (array)
         timeline: []
       };
     }
@@ -181,9 +175,9 @@
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await fetchProfile(data.user);
-        toast?.("लॉगिन सफल!", "success");
+        if (typeof toast === 'function') toast?.("लॉगिन सफल!", "success");
       };
-      const signOut = () => { supabase.auth.signOut(); toast?.("लॉगआउट", "success"); };
+      const signOut = () => { supabase.auth.signOut(); if (typeof toast === 'function') toast?.("लॉगआउट", "success"); };
       return <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, supabase }}>{children}</AuthContext.Provider>;
     }
     function useAuth() { return useContext(AuthContext); }
@@ -202,7 +196,7 @@
           query = query.eq('section_name', profile.section_name);
         }
         const { data, error } = await query;
-        if (error) { toast?.(error.message, 'error'); setLoading(false); return; }
+        if (error) { if (typeof toast === 'function') toast?.(error.message, 'error'); setLoading(false); return; }
         setReports(data || []);
         setLoading(false);
       }, [user, profile]);
@@ -372,7 +366,7 @@
       );
     }
 
-    // ========== REPORT FORM (with conditional Part 2) ==========
+    // ========== REPORT FORM ==========
     function ReportForm({ user, reports, initialData, onSave, onCancel }) {
       const [data, setData] = useState(initialData || emptyForm());
       const [submitting, setSubmitting] = useState(false);
@@ -382,28 +376,27 @@
       const showPart2 = isQ4 && user.role === 'HINDI_CELL';
 
       const handleSubmit = async () => {
-        // For SAO submission, certificate is handled in modal; but for DEO/AAO we don't require it.
-        // However if DEO is editing a returned report, they might not have certificate.
-        // We'll only require certificate if this is a new DEO submission? Actually certificate only for SAO.
-        // So we skip certificate check here.
         setSubmitting(true);
-        const report = { ...data, section_name: user.section_name };
-        // If editing existing (initialData) and user is DEO and status was returned -> set to PENDING_AAO
-        if (initialData && user.role === 'DEO' && (initialData.status === 'AAO_RETURNED' || initialData.status === 'SAO_RETURNED')) {
-          report.status = 'PENDING_AAO';
-          // Add timeline entry
-          const timeline = report.timeline || [];
-          timeline.push({
-            ts: new Date().toISOString(),
-            role: user.role,
-            name: user.section_name,
-            action: "DEO ने वापसी के बाद रिपोर्ट सुधार कर पुनः भेजी",
-            remark: ""
-          });
-          report.timeline = timeline;
+        try {
+          const report = { ...data, section_name: user.section_name };
+          if (initialData && user.role === 'DEO' && (initialData.status === 'AAO_RETURNED' || initialData.status === 'SAO_RETURNED')) {
+            report.status = 'PENDING_AAO';
+            const timeline = report.timeline || [];
+            timeline.push({
+              ts: new Date().toISOString(),
+              role: user.role,
+              name: user.section_name,
+              action: "DEO ने वापसी के बाद रिपोर्ट सुधार कर पुनः भेजी",
+              remark: ""
+            });
+            report.timeline = timeline;
+          }
+          await onSave(report);
+        } catch (err) {
+          console.error("Report submission error:", err);
+        } finally {
+          setSubmitting(false);
         }
-        await onSave(report);
-        setSubmitting(false);
       };
 
       return (
@@ -495,8 +488,7 @@
               <div style={{marginTop: 10}}><Inp label="iii) हिंदी माध्यम में किये गए अन्य आयोजन" value={data.b1_s11_other} onChange={v => set("b1_s11_other", v)} /></div>
             </SecCard>
 
-            {/* Part 1 Certificate – only for SAO? Actually we removed it from form, now handled in modal.
-                But we keep the fields in data for storage. We'll hide the certificate block from form. */}
+            {/* Part 1 Certificate is hidden from form - only shown in modal for SAO */}
 
             {/* ========== PART 2 – only if Hindi Cell and Q4 ========== */}
             {showPart2 && (
@@ -613,7 +605,7 @@
                   <div style={{marginTop: 10}}><Radio label="(ग) क्या विभागाध्यक्ष ने दोनों बैठकों में भाग लिया?" value={data.b2_s16_hod_attended} onChange={v => set("b2_s16_hod_attended", v)} options={["हाँ", "नहीं"]} /></div>
                 </SecCard>
 
-                {/* Part 2 Certificate – only for Hindi Cell */}
+                {/* Part 2 Certificate */}
                 <div style={{ background: "#fef2f2", padding: "20px", borderRadius: "12px", border: "1px solid #fca5a5", marginTop: "20px" }}>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "#991b1b", margin: "0 0 12px 0" }}>भाग-II प्रमाण-पत्र</h3>
                   <Grid cols={2}>
@@ -665,14 +657,12 @@
         }
       };
 
-      // Get latest report for each section for current quarter (maybe we need to filter by quarter)
-      const currentQuarter = "Q4"; // default, but we can let user select
+      const currentQuarter = "Q4";
       const currentYear = "2026";
 
       const getLatestReport = (sectionName) => {
         const sectionReports = reports.filter(r => r.section_name === sectionName && r.quarter === currentQuarter && r.year === currentYear);
         if (sectionReports.length === 0) return null;
-        // sort by updated_at descending
         const sorted = sectionReports.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
         return sorted[0];
       };
@@ -729,12 +719,11 @@
       );
     }
 
-    // ========== Consolidated Report View (printable) ==========
+    // ========== Consolidated Report View ==========
     function ConsolidatedReport({ reports, selectedSections, sections, onBack }) {
       const [consolidatedData, setConsolidatedData] = useState(null);
 
       useEffect(() => {
-        // Gather all reports for selected sections (latest each)
         const selectedReports = sections
           .filter(s => selectedSections.includes(s.id))
           .map(s => {
@@ -749,7 +738,6 @@
           return;
         }
 
-        // Sum numeric fields
         const sumFields = (fields) => {
           const result = {};
           fields.forEach(f => {
@@ -812,8 +800,6 @@
               </thead>
               <tbody>
                 {Object.entries(consolidatedData.sums).map(([key, value]) => {
-                  let label = key;
-                  // map to readable labels
                   const labelMap = {
                     'b1_s1_total_files': 'कुल भेजी गई फ़ाइलें',
                     'b1_s1_hindi_files': 'हिंदी में भेजी गई फ़ाइलें',
@@ -856,7 +842,7 @@
                     'b1_s9_sub_office_cmtes': 'अधीनस्थ समितियाँ',
                     'b1_s9_sub_office_meetings': 'आयोजित बैठकें (अधीनस्थ)',
                   };
-                  label = labelMap[key] || key;
+                  const label = labelMap[key] || key;
                   return (
                     <tr key={key}>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>{label}</td>
@@ -872,7 +858,7 @@
       );
     }
 
-    // ========== ACTION DASHBOARD (Inbox) with Edit for DEO ==========
+    // ========== ACTION DASHBOARD (Inbox) ==========
     function ActionDashboard({ reports, user, onEdit, setView }) {
       const [selected, setSelected] = useState(null);
       const [remark, setRemark] = useState("");
@@ -892,7 +878,6 @@
         try {
           const updateData = { status: nextAction, updated_at: new Date().toISOString() };
           if (certData) {
-            // Save certificate fields
             updateData.b1_cert_name = certData.b1_cert_name;
             updateData.b1_cert_desig = certData.b1_cert_desig;
             updateData.b1_cert_phone = certData.b1_cert_phone;
@@ -900,7 +885,6 @@
             updateData.b1_cert_place = certData.b1_cert_place;
             updateData.b1_cert_agreed = certData.b1_cert_agreed;
           }
-          // Add timeline
           const { data: existing } = await supabase.from('reports').select('timeline').eq('id', reportId).single();
           const timeline = existing?.timeline || [];
           timeline.push({
@@ -914,19 +898,20 @@
 
           const { error } = await supabase.from('reports').update(updateData).eq('id', reportId);
           if (error) throw error;
-          toast("स्थिति अपडेट की गई", "success");
+          if (typeof toast === 'function') toast("स्थिति अपडेट की गई", "success");
           setSelected(null);
           setShowCertModal(false);
           setPendingAction(null);
           setRemark("");
         } catch (err) {
-          toast(err.message, "error");
+          console.error("Status change error:", err);
+          if (typeof toast === 'function') toast(err.message, "error");
+          else alert("त्रुटि: " + err.message);
         }
       };
 
       const handleActionClick = (report, action) => {
         if (user.role === 'SAO' && action === 'SAO_APPROVED') {
-          // Show certificate modal
           setPendingAction({ report, action });
           setShowCertModal(true);
         } else {
@@ -944,14 +929,9 @@
         const st = STATUS[selected.status] || { label: selected.status, bg: "#eee", color: "#333", icon: "📌" };
         const actionBtns = (() => {
           if (user.role === 'DEO' && (selected.status === 'AAO_RETURNED' || selected.status === 'SAO_RETURNED')) {
-            // Show edit button
             return [{ label: "✏️ संपादित करें", action: "EDIT", grad: "linear-gradient(135deg,#f59e0b,#f97316)" }];
           }
-          // Normal workflow actions
           const map = {
-            DEO: {
-              AAO_RETURNED: [{ label: "✅ सुधार कर AAO को पुनः भेजें", action: "PENDING_AAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }],
-            },
             AAO: {
               PENDING_AAO: [
                 { label: "✅ SAO को अग्रेषित करें", action: "PENDING_SAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" },
@@ -977,8 +957,6 @@
           };
           return map[user.role]?.[selected.status] || [];
         })();
-
-        const isEditable = user.role === 'DEO' && (selected.status === 'AAO_RETURNED' || selected.status === 'SAO_RETURNED');
 
         return (
           <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -1018,7 +996,6 @@
         );
       }
 
-      // Default view: list
       return (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -1089,9 +1066,8 @@
       const [sections, setSections] = useState([]);
       const [selectedSections, setSelectedSections] = useState([]);
       const [showConsolidated, setShowConsolidated] = useState(false);
-      const toast = useToast();
+      const toast = useToast(); // ✅ fixed
 
-      // Fetch sections for Hindi Cell
       useEffect(() => {
         if (profile.role === 'HINDI_CELL') {
           supabase.from('sections').select('*').then(({ data, error }) => {
@@ -1101,25 +1077,31 @@
       }, [profile.role]);
 
       const handleSaveReport = async (reportData) => {
+        console.log("handleSaveReport called with data:", reportData);
         try {
           if (reportData.id) {
-            // Update existing
             const { error } = await supabase.from('reports').update(reportData).eq('id', reportData.id);
             if (error) throw error;
-            toast("रिपोर्ट अपडेट की गई", "success");
+            if (typeof toast === 'function') toast("रिपोर्ट अपडेट की गई", "success");
           } else {
-            // New report
             reportData.status = 'PENDING_AAO';
             reportData.timeline = [{ ts: new Date().toISOString(), role: profile.role, name: profile.section_name, action: "रिपोर्ट बनाई गई", remark: "" }];
             const { error } = await supabase.from('reports').insert([reportData]);
             if (error) throw error;
-            toast("रिपोर्ट सफलतापूर्वक जमा की गई", "success");
+            if (typeof toast === 'function') toast("रिपोर्ट सफलतापूर्वक जमा की गई", "success");
           }
-          setEditingReport(null);
-          setView('inbox');
-          refetch();
+          setTimeout(() => {
+            setEditingReport(null);
+            setView('inbox');
+            refetch();
+          }, 100);
         } catch (err) {
-          toast(err.message, "error");
+          console.error("Supabase error:", err);
+          if (typeof toast === 'function') {
+            toast(err.message || "डेटाबेस त्रुटि, कृपया पुनः प्रयास करें", "error");
+          } else {
+            alert("त्रुटि: " + (err.message || "अज्ञात त्रुटि"));
+          }
         }
       };
 
@@ -1134,7 +1116,6 @@
 
       const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
 
-      // Show consolidated report if requested
       if (profile.role === 'HINDI_CELL' && showConsolidated) {
         return (
           <ConsolidatedReport reports={reports} selectedSections={selectedSections} sections={sections} onBack={() => setShowConsolidated(false)} />
