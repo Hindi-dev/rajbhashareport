@@ -72,7 +72,6 @@
       SUBMITTED: { label: "हिंदी प्रकोष्ठ स्वीकृत", icon: "🎉", color: "#16a34a", bg: "#dcfce7" },
     };
 
-    // This strictly controls who can click what buttons based on the report's current status
     const WORKFLOW_ACTIONS = {
       DEO: {
         AAO_RETURNED: [{ label: "✅ सुधार कर AAO को पुनः भेजें", action: "PENDING_AAO", grad: "linear-gradient(135deg,#10b981,#0ea5e9)" }],
@@ -121,7 +120,6 @@
       const fetchProfile = useCallback(async (authUser) => {
         if (!authUser) return null;
         
-        // 1. Fetch Profile Data
         const { data: profData, error: profErr } = await supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
         
         if (profErr || !profData) {
@@ -129,12 +127,11 @@
           throw new Error("No profile found for user in database.");
         }
 
-        // 2. Map the actual Hindi Section Name
         if (profData.section_id) {
           const { data: secData } = await supabase.from('sections').select('section_name').eq('id', profData.section_id).maybeSingle();
           profData.section_name = secData?.section_name || `Section ${profData.section_id}`;
         } else {
-          profData.section_name = "सभी अनुभाग"; // For Hindi Cell global view
+          profData.section_name = "सभी अनुभाग";
         }
 
         setProfile(profData);
@@ -188,7 +185,6 @@
         if (!user || !profile) return;
 
         const fetchReports = async () => {
-          // RLS Policies will automatically filter out reports the user shouldn't see!
           const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
           if (!error) setReports(data || []);
           setLoading(false);
@@ -223,7 +219,7 @@
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>{label}</label>}
         <input type={type} value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-          style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 14, background: disabled ? "#f1f5f9" : "#fff", outline: "none", width: "100%" }} />
+          style={{ padding: "10px 14px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 15, background: disabled ? "#f1f5f9" : "#fff", outline: "none", width: "100%", fontFamily: "inherit" }} />
       </div>
     );
 
@@ -231,7 +227,7 @@
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>{label}</label>}
         <input type="number" min={0} value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-          style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 14, fontWeight: 600, background: disabled ? "#f1f5f9" : "#fff", outline: "none", width: "100%" }} />
+          style={{ padding: "10px 14px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 15, fontWeight: 600, background: disabled ? "#f1f5f9" : "#fff", outline: "none", width: "100%", fontFamily: "inherit" }} />
       </div>
     );
 
@@ -252,14 +248,23 @@
     );
 
     // ============================================================
-    //  LOGIN SCREEN
+    //  LOGIN SCREEN (MATCHES SCREENSHOT EXACTLY)
     // ============================================================
     function LoginScreen() {
+      const [selectedRole, setSelectedRole] = useState(null); // Tracks if a card was clicked
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
       const [loading, setLoading] = useState(false);
       const { signIn } = useAuth();
+
+      const roles = [
+        { id: 'DEO', title: 'अनुभाग', desc: 'रिपोर्ट भरें और AAO को भेजें', icon: '🏢', grad: 'linear-gradient(to right, #8b5cf6, #7c3aed)' },
+        { id: 'AAO', title: 'AAO', desc: 'अनुभाग की रिपोर्ट जाँचें और SAO को भेजें', icon: '🔎', grad: 'linear-gradient(to right, #0ea5e9, #3b82f6)' },
+        { id: 'SAO', title: 'SAO', desc: 'AAO की अनुशंसा स्वीकृत करें और आगे भेजें', icon: '✅', grad: 'linear-gradient(to right, #10b981, #06b6d4)' },
+        { id: 'HINDI_CELL', title: 'हिंदी प्रकोष्ठ', desc: 'SAO से आई रिपोर्ट अंतिम रूप से स्वीकार करें', icon: '🏛️', grad: 'linear-gradient(to right, #f59e0b, #ef4444)' },
+        { id: 'ADMIN', title: 'सुपर एडमिन', desc: 'पूरे सिस्टम का नियंत्रण और मास्टर रीसेट', icon: '👑', grad: 'linear-gradient(to right, #dc2626, #9f1239)' }
+      ];
 
       const handleLogin = async (e) => {
         e.preventDefault();
@@ -269,22 +274,56 @@
         finally { setLoading(false); }
       };
 
+      // VIEW 1: ROLE SELECTION (Matches your provided screenshot perfectly)
+      if (!selectedRole) {
+        return (
+          <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ height: '40px' }}></div> {/* Spacing at top to mimic the app header */}
+            <div style={{ background: '#ffffff', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', flex: 1, padding: '32px 24px' }}>
+              <h2 style={{ fontSize: '18px', color: '#475569', marginBottom: '24px', fontWeight: 700 }}>अपनी भूमिका चुनें:</h2>
+              
+              {roles.map(r => (
+                <button key={r.id} onClick={() => setSelectedRole(r)} 
+                style={{ width: '100%', background: r.grad, borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', marginBottom: '16px', border: 'none', color: 'white', textAlign: 'left', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  <span style={{ fontSize: '36px', marginRight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>
+                    {r.icon}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2px' }}>{r.title}</div>
+                    <div style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.3' }}>{r.desc}</div>
+                  </div>
+                  <span style={{ fontSize: '24px', opacity: 0.8 }}>→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // VIEW 2: SUPABASE LOGIN FORM
       return (
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#1e1b4b,#4c1d95,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '24px', padding: '40px', maxWidth: '420px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+        <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ height: '40px' }}></div>
+          <div style={{ background: '#ffffff', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', flex: 1, padding: '32px 24px' }}>
+            
+            <button onClick={() => { setSelectedRole(null); setError(''); }} style={{ background: "transparent", border: "none", color: "#6366f1", fontWeight: 700, fontSize: "15px", cursor: "pointer", marginBottom: "24px", display: "flex", alignItems: "center", gap: "6px", padding: 0 }}>
+              ← पीछे जाएँ
+            </button>
+
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <div style={{ fontSize: '56px', marginBottom: '10px' }}>🏛️</div>
-              <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#1e293b', margin: 0 }}>राजभाषा QPR पोर्टल</h1>
-              <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>पश्चिम रेलवे · अनुलग्नक-2</p>
+              <div style={{ fontSize: '56px', marginBottom: '10px' }}>{selectedRole.icon}</div>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>{selectedRole.title} लॉगिन</h1>
+              <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>अपने क्रेडेंशियल्स दर्ज करें</p>
             </div>
 
             <form onSubmit={handleLogin}>
               <Inp label="ईमेल आईडी" type="email" value={email} onChange={setEmail} />
               <div style={{ marginTop: '16px' }}><Inp label="पासवर्ड" type="password" value={password} onChange={setPassword} /></div>
+              
               {error && <div style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '8px', marginTop: '16px', fontSize: '13px', fontWeight: 600 }}>{error}</div>}
               
-              <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#6366f1', color: '#fff', fontWeight: 800, fontSize: '16px', marginTop: '24px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                {loading ? 'प्रवेश कर रहे हैं...' : 'लॉगिन करें →'}
+              <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: selectedRole.grad, color: '#fff', fontWeight: 800, fontSize: '16px', marginTop: '24px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                {loading ? 'सत्यापन हो रहा है...' : 'लॉगिन करें →'}
               </button>
             </form>
           </div>
@@ -320,7 +359,6 @@
       return (
         <div style={{ maxWidth: 800, margin: "0 auto", paddingBottom: "40px" }}>
           
-          {/* THE BANNER: Makes it 100% obvious who is filling this out */}
           <div style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "white", padding: "24px", borderRadius: "16px", marginBottom: "24px", textAlign: "center", boxShadow: "0 6px 20px rgba(99,102,241,0.3)" }}>
             <h2 style={{ fontSize: "28px", fontWeight: 800, margin: "0 0 6px 0" }}>🏢 {user.section_name}</h2>
             <p style={{ fontSize: "14px", opacity: 0.9, margin: 0, fontWeight: 600 }}>राजभाषा तिमाही प्रगति रिपोर्ट (QPR) प्रपत्र</p>
@@ -330,14 +368,14 @@
             <SecCard title="कार्यालय विवरण" icon="📋">
               <Grid cols={2}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>वर्ष</label>
-                  <select value={data.year} onChange={e => set("year", e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1" }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: '4px', display: 'block' }}>वर्ष</label>
+                  <select value={data.year} onChange={e => set("year", e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 15, fontFamily: "inherit" }}>
                     {YEARS.map(y => <option key={y}>{y}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>तिमाही</label>
-                  <select value={data.quarter} onChange={e => set("quarter", e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1" }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: '4px', display: 'block' }}>तिमाही</label>
+                  <select value={data.quarter} onChange={e => set("quarter", e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 15, fontFamily: "inherit" }}>
                     {QUARTERS.map(q => <option value={q.id} key={q.id}>{q.label}</option>)}
                   </select>
                 </div>
@@ -359,14 +397,13 @@
           </div>
 
           <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
-            {initialData && <button onClick={onCancel} style={{ flex: 0.3, padding: "14px", borderRadius: "12px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer" }}>रद्द करें</button>}
+            {initialData && <button onClick={onCancel} style={{ flex: 0.3, padding: "14px", borderRadius: "12px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 700, cursor: "pointer", fontSize: "15px" }}>रद्द करें</button>}
             
             <button onClick={handleSubmit} disabled={submitting} 
               style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", background: "#10b981", color: "#fff", fontWeight: 800, fontSize: "16px", cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
               {submitting ? 'जमा हो रहा है...' : '✅ रिपोर्ट जमा करें'}
             </button>
           </div>
-
         </div>
       );
     }
@@ -379,16 +416,14 @@
       const [selected, setSelected] = useState(null);
       const [remark, setRemark] = useState("");
 
-      // Filter logic: What should this specific user see in their inbox?
       const myReports = reports.filter(rep => {
         if (user.role === 'DEO') return rep.section_name === user.section_name;
         if (user.role === 'AAO') return rep.section_name === user.section_name && ['PENDING_AAO', 'SAO_RETURNED', 'AAO_APPROVED'].includes(rep.status);
         if (user.role === 'SAO') return rep.section_name === user.section_name && ['PENDING_SAO', 'AAO_RETURNED', 'SAO_APPROVED'].includes(rep.status);
         if (user.role === 'HINDI_CELL') return ['SAO_APPROVED', 'SUBMITTED'].includes(rep.status);
-        return false;
+        return true; // Admin sees all
       });
 
-      // Handle the Workflow Buttons directly saving to database
       const handleStatusChange = async (reportId, nextAction) => {
         const { error } = await supabase.from('reports').update({ 
           status: nextAction, 
@@ -396,24 +431,24 @@
         }).eq('id', reportId);
 
         if (error) alert("Error: " + error.message);
-        else setSelected(null); // Return to list view
+        else setSelected(null);
       };
 
       if (selected) {
-        const st = STATUS[selected.status];
+        const st = STATUS[selected.status] || { label: selected.status, bg: "#eee", color: "#333", icon: "📌" };
         const actionBtns = workflowActionsFor(user.role, selected.status);
 
         return (
           <div style={{ maxWidth: 800, margin: "0 auto" }}>
-            <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, cursor: "pointer", marginBottom: "16px" }}>← वापस सूची में</button>
+            <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, cursor: "pointer", marginBottom: "16px", fontSize: "15px", display: 'flex', alignItems: 'center', gap: '5px', padding: 0 }}>← वापस सूची में</button>
             
             <div style={{ background: "#fff", borderRadius: "16px", padding: "24px", border: "1px solid #e2e8f0" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px" }}>
                 <div>
                   <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", margin: "0 0 6px 0" }}>{selected.section_name}</h2>
-                  <span style={{ fontSize: "13px", color: "#64748b" }}>{selected.quarter} · {selected.year} · ID: {selected.ackId}</span>
+                  <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>{selected.quarter} · {selected.year} · ID: {selected.ackId}</span>
                 </div>
-                <span style={{ background: st.bg, color: st.color, padding: "6px 12px", borderRadius: "8px", fontWeight: 700, fontSize: "13px", border: `1px solid ${st.color}40` }}>
+                <span style={{ background: st.bg, color: st.color, padding: "8px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "13px", border: `1px solid ${st.color}40`, display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {st.icon} {st.label}
                 </span>
               </div>
@@ -421,19 +456,19 @@
               {actionBtns.length > 0 ? (
                 <div style={{ background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid #cbd5e1" }}>
                   <h3 style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", margin: "0 0 12px 0" }}>⚡ कार्रवाई करें</h3>
-                  <textarea value={remark} onChange={e => setRemark(e.target.value)} placeholder="यहां कोई टिप्पणी लिखें (वैकल्पिक)..." style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", marginBottom: "16px", outline: "none", fontFamily: "inherit" }} rows={2} />
+                  <textarea value={remark} onChange={e => setRemark(e.target.value)} placeholder="यहां कोई टिप्पणी लिखें (वैकल्पिक)..." style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", marginBottom: "16px", outline: "none", fontFamily: "inherit", fontSize: "14px" }} rows={2} />
                   
                   <div style={{ display: "flex", gap: "12px" }}>
                     {actionBtns.map(btn => (
                       <button key={btn.action} onClick={() => handleStatusChange(selected.id, btn.action)}
-                        style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: btn.grad, color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: "14px" }}>
+                        style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: btn.grad, color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: "15px" }}>
                         {btn.label}
                       </button>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div style={{ background: "#f1f5f9", padding: "16px", borderRadius: "10px", color: "#64748b", fontWeight: 600, textAlign: "center" }}>
+                <div style={{ background: "#f1f5f9", padding: "16px", borderRadius: "10px", color: "#64748b", fontWeight: 600, textAlign: "center", fontSize: "14px" }}>
                   वर्तमान स्थिति में आपके लिए कोई कार्रवाई लंबित नहीं है।
                 </div>
               )}
@@ -449,30 +484,30 @@
               {user.role === 'DEO' ? '📋 मेरी फाइलें' : '📥 इनबॉक्स'}
             </h2>
             {user.role === 'DEO' && (
-              <button onClick={() => setView('form')} style={{ background: "#6366f1", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>+ नई रिपोर्ट</button>
+              <button onClick={() => setView('form')} style={{ background: "#6366f1", color: "#fff", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>+ नई रिपोर्ट</button>
             )}
           </div>
 
           {myReports.length === 0 ? (
             <div style={{ background: "#fff", padding: "40px", borderRadius: "16px", textAlign: "center", border: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>📭</div>
-              <p style={{ color: "#64748b", fontWeight: 600, margin: 0 }}>कोई रिपोर्ट नहीं मिली।</p>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>📭</div>
+              <p style={{ color: "#64748b", fontWeight: 600, margin: 0, fontSize: "16px" }}>कोई रिपोर्ट नहीं मिली।</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {myReports.map(rep => {
-                const st = STATUS[rep.status];
+                const st = STATUS[rep.status] || { label: rep.status, bg: "#eee", color: "#333" };
                 const needsAction = workflowActionsFor(user.role, rep.status).length > 0;
 
                 return (
                   <div key={rep.id} onClick={() => setSelected(rep)} style={{ background: "#fff", padding: "16px 20px", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.02)" }}>
                     <div>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b" }}>{rep.section_name}</div>
-                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>{rep.quarter} · {rep.year}</div>
+                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{rep.section_name}</div>
+                      <div style={{ fontSize: "13px", color: "#64748b", marginTop: "4px", fontWeight: 600 }}>{rep.quarter} · {rep.year}</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       {needsAction && <span style={{ background: "#ef4444", color: "#fff", padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 800 }}>कार्रवाई आवश्यक</span>}
-                      <span style={{ background: st.bg, color: st.color, padding: "6px 12px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, border: `1px solid ${st.color}30` }}>
+                      <span style={{ background: st.bg, color: st.color, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 700, border: `1px solid ${st.color}30` }}>
                         {st.label}
                       </span>
                     </div>
@@ -503,7 +538,6 @@
       const { reports, loading } = useReports();
       const sections = useSections();
       
-      // DEOs go straight to the form, Managers go to their Inbox
       const [view, setView] = useState(profile.role === 'DEO' ? 'form' : 'inbox');
       const [editingReport, setEditingReport] = useState(null);
 
@@ -516,20 +550,26 @@
 
       if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><div className="spinner"></div></div>;
 
+      const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
+
       return (
         <div>
           {/* Top Navigation Bar */}
-          <nav style={{ background: ROLES[profile.role].color, padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <div style={{ color: "white", fontWeight: 800, fontSize: "18px" }}>🏛️ राजभाषा QPR</div>
+          <nav style={{ background: roleTheme.color, padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <div style={{ color: "white", fontWeight: 800, fontSize: "18px", display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🏛️</span> राजभाषा QPR
+            </div>
+            
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setView('inbox')} style={{ background: view === 'inbox' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>📥 डैशबोर्ड</button>
+              <button onClick={() => setView('inbox')} style={{ background: view === 'inbox' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📥 डैशबोर्ड</button>
               {profile.role === 'DEO' && (
-                <button onClick={() => setView('form')} style={{ background: view === 'form' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>📝 नई रिपोर्ट</button>
+                <button onClick={() => setView('form')} style={{ background: view === 'form' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📝 नई रिपोर्ट</button>
               )}
             </div>
+
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <span style={{ color: "white", fontSize: "13px", fontWeight: 600, background: "rgba(0,0,0,0.2)", padding: "4px 12px", borderRadius: "20px" }}>{ROLES[profile.role].label}</span>
-              <button onClick={signOut} style={{ background: "#ef4444", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px", fontWeight: 700, cursor: "pointer", fontSize: "12px" }}>लॉगआउट</button>
+              <span style={{ color: "white", fontSize: "13px", fontWeight: 700, background: "rgba(0,0,0,0.2)", padding: "6px 14px", borderRadius: "20px" }}>{roleTheme.label}</span>
+              <button onClick={signOut} style={{ background: "#ef4444", color: "white", border: "none", padding: "8px 14px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>लॉगआउट</button>
             </div>
           </nav>
 
