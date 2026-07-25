@@ -89,3 +89,29 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+@media print {
+  .print-container {
+    max-width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+  table {
+    page-break-inside: avoid;
+  }
+  h2, h3 {
+    page-break-after: avoid;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 15mm 12mm;
+    size: A4;
+  }
+  body {
+    background: #fff !important;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
