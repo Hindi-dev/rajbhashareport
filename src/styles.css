@@ -1,0 +1,91 @@
+body {
+  background: #f8fafc;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+* { box-sizing: border-box; }
+.no-print { display: block; }
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  @page { margin: 12mm 15mm; size: A4; }
+  body { background: #fff !important; }
+}
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+}
+.toast {
+  background: #1e293b;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-weight: 600;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+.toast-error { background: #dc2626; }
+.toast-success { background: #16a34a; }
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.filter-bar select, .filter-bar input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  background: #fff;
+}
+.print-container { max-width: 100%; }
+.print-container table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.print-container table th, .print-container table td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+.audit-timeline {
+  border-left: 2px solid #6366f1;
+  padding-left: 16px;
+  margin-left: 8px;
+}
+.audit-timeline .entry {
+  margin-bottom: 12px;
+  position: relative;
+}
+.audit-timeline .entry::before {
+  content: '●';
+  position: absolute;
+  left: -22px;
+  color: #6366f1;
+  font-size: 14px;
+}
+.audit-timeline .entry .time { font-size: 12px; color: #64748b; }
+.audit-timeline .entry .action { font-weight: 600; color: #1e293b; }
+.report-data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.report-data-table td, .report-data-table th { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+.report-data-table th { background: #f1f5f9; font-weight: 700; }
+.spinner {
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #6366f1;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

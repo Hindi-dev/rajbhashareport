@@ -1,0 +1,8 @@
+{
+  "client": {
+    "build": {
+      "path": "dist"
+    }
+  }
+}
+
