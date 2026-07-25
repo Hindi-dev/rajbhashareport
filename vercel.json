@@ -1,0 +1,21 @@
+cat > vercel.json << 'EOF'
+{
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
+EOF
+
+git add vercel.json
+git commit -m "Add vercel.json config for Vite SPA"
+git push origin main
+
