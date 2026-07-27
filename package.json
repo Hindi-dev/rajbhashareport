@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview",
-  "deploy": "npm run build && catalyst deploy client && catalyst deploy functions"
-},
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && catalyst deploy client && catalyst deploy functions"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -22,5 +22,8 @@
     "@vitejs/plugin-react": "^6.0.4",
     "vite": "^8.1.5"
   }
+}
+"engines": {
+  "node": ">=24"
 }
 
