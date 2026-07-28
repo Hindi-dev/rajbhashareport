@@ -12,7 +12,6 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "@vitejs/plugin-react": "^6.0.4",
     "vite": "^8.1.5"
   },
@@ -20,10 +19,3 @@
     "node": ">=24"
   }
 }
-=======
-    "vite": "^8.1.5",
-    "@vitejs/plugin-react": "^6.0.4"
-  }
-}
-
->>>>>>> b59ec7d2d3511efddaa8bc569ff2ed264a682207
