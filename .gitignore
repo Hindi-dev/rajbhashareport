@@ -1,1 +1,3 @@
 <above content>
+node_modules/
+package-lock.json
