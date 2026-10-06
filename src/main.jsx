@@ -1281,3 +1281,95 @@ function AuthenticatedApp({ user, profile, signOut }) {
   const handleEdit = (report) => {
     setEditingReport(report);
     setView('form');
+  };
+
+  const handleConsolidate = () => {
+    setShowConsolidated(true);
+  };
+
+  const handleDeleteReport = async (id) => {
+    try {
+      const { error } = await supabase.from('reports').delete().eq('id', id);
+      if (error) throw error;
+      if (typeof toast === 'function') toast("रिपोर्ट हटा दी गई", "success");
+      refetch();
+    } catch (err) {
+      console.error("Delete error:", err);
+      if (typeof toast === 'function') toast(err.message || "हटाने में त्रुटि", "error");
+    }
+  };
+
+  const handlePrint = (report) => {
+    setPrintReport(report);
+    setView('print');
+  };
+
+  const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
+
+  if (profile.role === 'HINDI_CELL' && showConsolidated) {
+    return (
+      <ConsolidatedReport reports={reports} selectedSections={selectedSections} sections={sections} onBack={() => setShowConsolidated(false)} />
+    );
+  }
+
+  const isHindiCell = profile.role === 'HINDI_CELL';
+
+  if (view === 'print' && printReport) {
+    return <ReportPrintView report={printReport} onClose={() => { setView('inbox'); setPrintReport(null); }} />;
+  }
+
+  return (
+    <div>
+      <nav style={{ background: roleTheme.color, padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+        <div style={{ color: "white", fontWeight: 800, fontSize: "16px", display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>🏛️</span> प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={() => setView('inbox')} style={{ background: view === 'inbox' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📥 डैशबोर्ड</button>
+          {profile.role === 'DEO' && (
+            <button onClick={() => setView('form')} style={{ background: view === 'form' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📝 नई रिपोर्ट</button>
+          )}
+          {isHindiCell && (
+            <>
+              <button onClick={() => setView('dashboard')} style={{ background: view === 'dashboard' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📊 स्थिति</button>
+              <button onClick={() => setView('allReports')} style={{ background: view === 'allReports' ? "rgba(255,255,255,0.2)" : "transparent", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" }}>📋 सभी रिपोर्टें</button>
+            </>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <span style={{ color: "white", fontSize: "13px", fontWeight: 700, background: "rgba(0,0,0,0.2)", padding: "6px 14px", borderRadius: "20px" }}>{roleTheme.label}</span>
+          <button onClick={signOut} style={{ background: "#ef4444", color: "white", border: "none", padding: "8px 14px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>लॉगआउट</button>
+        </div>
+      </nav>
+
+      <main style={{ padding: "30px 20px 80px" }}>
+        {view === 'form' && (
+          <ReportForm user={profile} reports={reports} initialData={editingReport} onSave={handleSaveReport} onCancel={() => { setView('inbox'); setEditingReport(null); }} />
+        )}
+        {view === 'inbox' && (
+          <ActionDashboard reports={reports} user={profile} onEdit={handleEdit} setView={setView} onPrint={handlePrint} />
+        )}
+        {view === 'dashboard' && isHindiCell && (
+          <HindiCellDashboard
+            reports={reports}
+            sections={sections}
+            selectedSections={selectedSections}
+            onSelectSections={setSelectedSections}
+            onConsolidate={handleConsolidate}
+          />
+        )}
+        {view === 'allReports' && isHindiCell && (
+          <HindiCellReportsList
+            reports={reports}
+            sections={sections}
+            onEdit={handleEdit}
+            onDelete={handleDeleteReport}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
