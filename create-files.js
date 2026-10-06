@@ -12,6 +12,7 @@ const dirs = [
   'src/hooks',
   'src/constants',
   'src/utils',
+  'public',
 ];
 
 // ------------------------------------------------------------
@@ -127,9 +128,16 @@ export function validateReport(data) {
   // ---- supabase client ----
   'src/supabaseClient.js': `import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = "https://ykooktqnxunmoenucdoy.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Wo14uG3EowORP_eHV7SMlw_o1HLqU0f";
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);`,
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ykooktqnxunmoenucdoy.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_Wo14uG3EowORP_eHV7SMlw_o1HLqU0f";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});`,
 
   // ---- hooks ----
   'src/hooks/useAuth.js': `import { useContext } from 'react';
@@ -160,7 +168,8 @@ export function useReports() {
     if (error) { addToast?.(error.message, 'error'); setLoading(false); return; }
     setReports(data || []);
     setLoading(false);
-  }, [user, profile, addToast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile]);
 
   useEffect(() => {
     fetchReports();
@@ -418,7 +427,10 @@ import { Inp, Num, Radio, SecCard, Grid, TblInput } from '../Common/UIComponents
 
 export const ReportForm = ({ initialData, onSave, onCancel }) => {
   const { profile } = useAuth();
-  const [data, setData] = useState(initialData || EMPTY_FORM);
+  const [data, setData] = useState(() => {
+    const base = initialData || EMPTY_FORM;
+    return { ...base, section_name: base.section_name || profile?.section_name || "" };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const set = (k, v) => setData(d => ({ ...d, [k]: v }));
@@ -1263,7 +1275,15 @@ import { useToast } from './Common/Toast';
 export const MainApp = () => {
   const { user, profile, signOut, loading } = useAuth();
   const { reports, loading: reportsLoading, refetch } = useReports();
-  const [view, setView] = useState(profile?.role === 'DEO' ? 'form' : 'inbox');
+  const [view, setView] = useState('inbox');
+  const viewInitialised = React.useRef(false);
+
+  React.useEffect(() => {
+    if (profile && !viewInitialised.current) {
+      viewInitialised.current = true;
+      if (profile.role === 'DEO') setView('form');
+    }
+  }, [profile]);
   const [editingReport, setEditingReport] = useState(null);
   const [sections, setSections] = useState([]);
   const [selectedSections, setSelectedSections] = useState([]);
@@ -1421,13 +1441,16 @@ export const MainApp = () => {
 };`,
 
   // ---- index entry ----
-  'src/index.js': `import React from 'react';
+  'src/main.jsx': `import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import './styles.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);`,
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`,
 
   // ---- styles (minimal) ----
   'src/styles.css': `body {
@@ -1522,15 +1545,48 @@ root.render(<App />);`,
   100% { transform: rotate(360deg); }
 }`,
 
+  // ---- public/favicon.svg ----
+  'public/favicon.svg': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="18" fill="#5b21b6"/>
+  <rect x="6" y="6" width="88" height="88" rx="14" fill="#4f46e5"/>
+  <text x="50" y="62" font-size="52" font-family="serif" text-anchor="middle" fill="white">रा</text>
+</svg>`,
+
   // ---- vite.config.js ----
   'vite.config.js': `import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-  },
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+      manifest: {
+        name: 'राजभाषा QPR',
+        short_name: 'QPR',
+        description: 'राजभाषा तिमाही प्रगति रिपोर्ट प्रणाली',
+        theme_color: '#6366f1',
+        background_color: '#312e81',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html',
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
+  base: '/',
+  server: { port: 3000 },
+  resolve: { dedupe: ['react', 'react-dom'] },
+  optimizeDeps: { include: ['react', 'react-dom', 'react/jsx-runtime'] },
 });`,
 
   // ---- package.json (optional, but we'll provide a basic one if not exists) ----
@@ -1566,8 +1622,13 @@ Object.entries(files).forEach(([filePath, content]) => {
 
 console.log('\n✅ सभी फ़ाइलें सफलतापूर्वक बनाई गईं!');
 console.log('\n📦 अब आवश्यक पैकेज इंस्टॉल करें:');
-console.log('   npm install react react-dom @supabase/supabase-js');
-console.log('   npm install -D vite @vitejs/plugin-react');
+console.log('   npm install');
+console.log('\n⚙️  वैकल्पिक: .env.local फ़ाइल बनाएँ (सुरक्षित credentials हेतु):');
+console.log('   VITE_SUPABASE_URL=https://ykooktqnxunmoenucdoy.supabase.co');
+console.log('   VITE_SUPABASE_ANON_KEY=<your-anon-key>');
+console.log('\n🖼️  icon-192.png और icon-512.png को public/ फ़ोल्डर में कॉपी करें');
 console.log('\n🚀 फिर डेव सर्वर चलाएँ:');
 console.log('   npm run dev');
+console.log('\n🏗️  प्रोडक्शन बिल्ड:');
+console.log('   npm run build');
 console.log('\n✨ धन्यवाद!');

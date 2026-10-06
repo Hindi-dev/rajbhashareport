@@ -6,7 +6,10 @@ import { Inp, Num, Radio, SecCard, Grid, TblInput } from '../Common/UIComponents
 
 export const ReportForm = ({ initialData, onSave, onCancel }) => {
   const { profile } = useAuth();
-  const [data, setData] = useState(initialData || EMPTY_FORM);
+  const [data, setData] = useState(() => {
+    const base = initialData || EMPTY_FORM;
+    return { ...base, section_name: base.section_name || profile?.section_name || "" };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const set = (k, v) => setData(d => ({ ...d, [k]: v }));

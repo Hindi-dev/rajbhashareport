@@ -7,27 +7,20 @@ export function useReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
-  const toast = useToast();
-  const addToast = toast?.addToast;
+  const { addToast } = useToast();
 
   const fetchReports = useCallback(async () => {
-    if (!user || !profile) {
-      setLoading(false);
-      return;
-    }
+    if (!user || !profile) return;
     let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
     if (profile.role !== 'HINDI_CELL') {
       query = query.eq('section_name', profile.section_name);
     }
     const { data, error } = await query;
-    if (error) {
-      addToast?.(error.message, 'error');
-      setLoading(false);
-      return;
-    }
+    if (error) { addToast?.(error.message, 'error'); setLoading(false); return; }
     setReports(data || []);
     setLoading(false);
-  }, [user, profile, addToast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile]);
 
   useEffect(() => {
     fetchReports();

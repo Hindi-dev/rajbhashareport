@@ -15,7 +15,15 @@ import { useToast } from './Common/Toast';
 export const MainApp = () => {
   const { user, profile, signOut, loading } = useAuth();
   const { reports, loading: reportsLoading, refetch } = useReports();
-  const [view, setView] = useState(profile?.role === 'DEO' ? 'form' : 'inbox');
+  const [view, setView] = useState('inbox');
+  const viewInitialised = React.useRef(false);
+
+  React.useEffect(() => {
+    if (profile && !viewInitialised.current) {
+      viewInitialised.current = true;
+      if (profile.role === 'DEO') setView('form');
+    }
+  }, [profile]);
   const [editingReport, setEditingReport] = useState(null);
   const [sections, setSections] = useState([]);
   const [selectedSections, setSelectedSections] = useState([]);
@@ -50,6 +58,7 @@ export const MainApp = () => {
           }
         }
       }
+
       reportData.updated_at = new Date().toISOString();
       if (reportData.id) {
         const { error } = await supabase.from('reports').update(reportData).eq('id', reportData.id);
@@ -99,15 +108,11 @@ export const MainApp = () => {
     setView('print');
   };
 
-  if (loading) {
+  if (loading || reportsLoading) {
     return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><div className="spinner"></div></div>;
   }
 
   if (!user || !profile) return <LoginScreen />;
-
-  if (reportsLoading) {
-    return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><div className="spinner"></div></div>;
-  }
 
   const roleTheme = ROLES[profile.role] || { color: '#312e81', label: profile.role };
   const isHindiCell = profile.role === 'HINDI_CELL';
