@@ -1,0 +1,9 @@
+import React from 'react';
+
+export const MainApp = () => {
+  return (
+    <div style={{ padding: '50px', background: 'lightgreen', textAlign: 'center' }}>
+      <h1>✅ MainApp loaded!</h1>
+    </div>
+  );
+};
