@@ -3,60 +3,28 @@ name: Deploy to Vercel
 on:
   push:
     branches:
-      - main   # default branch
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Node.js v24
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: "npm"
 
-      # Install dependencies
       - name: Install dependencies
         run: npm install
 
-      name: Deploy to Vercel
-
-on:
-  push:
-    branches:
-      - main   # default branch
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checkout repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Setup Node.js v24
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: "npm"
-
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # Build Vite project
       - name: Build project
         run: npm run build
 
-      # Deploy to Vercel
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -65,4 +33,3 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./
           prod: true
-

@@ -17,7 +17,11 @@ export const AuthProvider = ({ children }) => {
     if (profData.section_id) {
       const { data: secData } = await supabase.from('sections').select('section_name').eq('id', profData.section_id).maybeSingle();
       profData.section_name = secData?.section_name || `Section ${profData.section_id}`;
-    } else { profData.section_name = "सभी अनुभाग"; }
+      profData.mapped_section = profData.section_name;
+    } else {
+      profData.section_name = "सभी अनुभाग";
+      profData.mapped_section = "सभी अनुभाग";
+    }
     setProfile(profData);
     return profData;
   }, []);

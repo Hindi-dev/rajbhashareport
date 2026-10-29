@@ -10,10 +10,15 @@ export function useReports() {
   const { addToast } = useToast();
 
   const fetchReports = useCallback(async () => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
     let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
     if (profile.role !== 'HINDI_CELL') {
-      query = query.eq('section_name', profile.section_name);
+      const section = profile.mapped_section || profile.section_name;
+      query = query.eq('section_name', section);
     }
     const { data, error } = await query;
     if (error) { addToast?.(error.message, 'error'); setLoading(false); return; }

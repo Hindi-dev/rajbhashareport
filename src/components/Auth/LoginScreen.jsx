@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Inp } from '../Common/UIComponents';
 
 export const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -13,27 +12,49 @@ export const LoginScreen = () => {
     e.preventDefault();
     setError(''); setLoading(true);
     try { await signIn(email, password); }
-    catch (err) { setError("ईमेल या पासवर्ड गलत है।"); }
+    catch (err) { setError(err.message || "ईमेल या पासवर्ड गलत है।"); }
     finally { setLoading(false); }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#312e81', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-      <div style={{ background: '#fff', borderRadius: '32px', padding: '40px 32px', maxWidth: 450, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🏛️</div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: '0 0 6px 0' }}>प्रधान निदेशक लेखापरीक्षा का कार्यालय, रेलवे, मुंबई</h1>
-          <p style={{ fontSize: '15px', color: '#4f46e5', fontWeight: 700 }}>राजभाषा पोर्टल</p>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>अपने क्रेडेंशियल्स दर्ज करें</p>
+    <div className="login-page">
+      <div className="login-card">
+        <aside className="login-aside">
+          <div>
+            <div className="login-mark">🏛️</div>
+            <h1>प्रधान निदेशक लेखापरीक्षा का कार्यालय, रेलवे, मुंबई</h1>
+            <p>राजभाषा तिमाही प्रगति रिपोर्ट · अनुलग्नक-2</p>
+          </div>
+          <div className="login-points">
+            <div className="login-point"><span>📝</span><span>ऑनलाइन रिपोर्ट भरें और जमा करें</span></div>
+            <div className="login-point"><span>🔁</span><span>AAO → SAO → हिंदी प्रकोष्ठ वर्कफ़्लो</span></div>
+            <div className="login-point"><span>📊</span><span>समेकित रिपोर्ट और PDF प्रिंट</span></div>
+          </div>
+        </aside>
+
+        <div className="login-main">
+          <h2>लॉगिन करें</h2>
+          <p className="login-sub">अपने विभाग से प्राप्त क्रेडेंशियल्स का उपयोग करें</p>
+
+          <form onSubmit={handleLogin}>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label className="field-label">ईमेल आईडी</label>
+              <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} placeholder="your-email@domain.com" required />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label className="field-label">पासवर्ड</label>
+              <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+            </div>
+
+            {error && <div className="login-error">{error}</div>}
+
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading} style={{ padding: '13px 18px', fontSize: 14 }}>
+              {loading ? 'सत्यापन हो रहा है...' : 'लॉगिन करें →'}
+            </button>
+          </form>
+
+          <p className="login-foot">© 2026 · राजभाषा QPR · पश्चिम रेलवे</p>
         </div>
-        <form onSubmit={handleLogin}>
-          <Inp label="ईमेल आईडी" type="email" value={email} onChange={setEmail} />
-          <div style={{ marginTop: '16px' }}><Inp label="पासवर्ड" type="password" value={password} onChange={setPassword} /></div>
-          {error && <div style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '8px', marginTop: '16px', fontSize: '13px', fontWeight: 600 }}>{error}</div>}
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#6366f1', color: '#fff', fontWeight: 800, fontSize: '16px', marginTop: '24px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
-            {loading ? 'सत्यापन हो रहा है...' : 'लॉगिन करें →'}
-          </button>
-        </form>
       </div>
     </div>
   );
