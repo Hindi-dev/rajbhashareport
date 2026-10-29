@@ -206,7 +206,12 @@ export function useReports() {
         const section = profile.mapped_section || profile.section_name;
         query = query.eq('section_name', section);
       }
-      const { data, error } = await query;
+      // Race against a 3-second timeout to avoid hanging on unreachable Supabase
+      const QUERY_TIMEOUT = 3000;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT)
+      );
+      const { data, error } = await Promise.race([query, timeoutPromise]);
       if (!error && data && data.length > 0) {
         setReports(data);
         localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(data));

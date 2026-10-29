@@ -23,7 +23,15 @@ export function useSections() {
       return;
     }
     let cancelled = false;
-    supabase.from('sections').select('*').order('id').then(({ data, error }) => {
+    // Race against a 3-second timeout to avoid hanging on unreachable Supabase
+    const QUERY_TIMEOUT = 3000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT)
+    );
+    Promise.race([
+      supabase.from('sections').select('*').order('id'),
+      timeoutPromise
+    ]).then(({ data, error }) => {
       if (cancelled) return;
       if (!error && data && data.length > 0) {
         setSections(data);

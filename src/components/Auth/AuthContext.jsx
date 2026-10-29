@@ -112,15 +112,25 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    // 2. Check Supabase session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // 2. Check Supabase session with fast timeout (2s) to avoid long DNS hangs
+    const TIMEOUT_MS = 2000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Supabase timeout')), TIMEOUT_MS)
+    );
+    Promise.race([
+      supabase.auth.getSession(),
+      timeoutPromise
+    ]).then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
         fetchProfile(session.user).catch(() => {}).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      console.warn('Supabase unreachable — using demo/offline mode');
+      setLoading(false);
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
