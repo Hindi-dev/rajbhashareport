@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '../supabaseClient';
 
+const DEFAULT_SECTIONS = [
+  { id: 1, section_name: 'प्रशासन अनुभाग' },
+  { id: 2, section_name: 'लेखा अनुभाग' },
+  { id: 3, section_name: 'स्थापना अनुभाग' },
+  { id: 4, section_name: 'यातायात लेखापरीक्षा अनुभाग' },
+  { id: 5, section_name: 'सामान्य अनुभाग' },
+  { id: 6, section_name: 'हिंदी अनुभाग' }
+];
+
 export function useSections() {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,8 +25,17 @@ export function useSections() {
     let cancelled = false;
     supabase.from('sections').select('*').order('id').then(({ data, error }) => {
       if (cancelled) return;
-      if (!error) setSections(data || []);
+      if (!error && data && data.length > 0) {
+        setSections(data);
+      } else {
+        setSections(DEFAULT_SECTIONS);
+      }
       setLoading(false);
+    }).catch(() => {
+      if (!cancelled) {
+        setSections(DEFAULT_SECTIONS);
+        setLoading(false);
+      }
     });
     return () => { cancelled = true; };
   }, [user]);

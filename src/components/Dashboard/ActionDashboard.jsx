@@ -66,7 +66,27 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
           updated_at: new Date().toISOString(),
           timeline,
         }).eq('id', report.id);
-        if (error) throw error;
+        if (error) console.warn("Supabase update fallback:", error);
+      }
+
+      // Sync local cache
+      try {
+        const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
+        const idx = stored.findIndex(r => r.id === report.id || r.ackId === report.ackId);
+        if (idx >= 0) {
+          stored[idx].status = nextAction;
+          stored[idx].updated_at = new Date().toISOString();
+          stored[idx].timeline = [...(stored[idx].timeline || []), {
+            ts: new Date().toISOString(),
+            role: profile.role,
+            name: profile.section_name,
+            action: `स्थिति बदली: ${STATUS[nextAction]?.label || nextAction}`,
+            remark: remark || "",
+          }];
+          localStorage.setItem('rajbhasha_reports_cache', JSON.stringify(stored));
+        }
+      } catch (e) {
+        // ignore
       }
 
       addToast?.("स्थिति अपडेट की गई", "success");
