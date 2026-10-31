@@ -569,8 +569,8 @@ export const LoginScreen = () => {
               <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300 drop-shadow-sm">
                 अभिकल्पना एवं विकास (DESIGNED & DEVELOPED BY)
               </div>
-              <div className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                भारत भूषण · <span className="text-slate-300 font-medium">वरिष्ठ अनुवाद अधिकारी (वरि.अ.अधि. / STO)</span>
+              <div className="text-xs sm:text-sm font-semibold text-cyan-300 mt-0.5">
+                भारत भूषण - वरिष्ठ अनुवाद अधिकारी
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5 font-medium">
                 कार्यालय प्रधान निदेशक लेखापरीक्षा (रेलवे), मुंबई · Western Railway
