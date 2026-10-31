@@ -189,23 +189,75 @@ const normalizeReport = (r) => ({
   b1_s11_special_achievements: r.b1_s11_special_achievements || r.b1_s11_special || "",
 });
 
+export const DELETED_REPORTS_KEY = 'rajbhasha_deleted_report_ids';
+
+export const getDeletedReportIds = () => {
+  try {
+    const raw = localStorage.getItem(DELETED_REPORTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const markReportAsDeleted = (id, ackId) => {
+  try {
+    const list = getDeletedReportIds();
+    let changed = false;
+    const cleanId = id ? String(id).trim() : null;
+    const cleanAck = ackId ? String(ackId).trim() : null;
+    if (cleanId && !list.includes(cleanId)) {
+      list.push(cleanId);
+      changed = true;
+    }
+    if (cleanAck && !list.includes(cleanAck)) {
+      list.push(cleanAck);
+      changed = true;
+    }
+    if (changed) {
+      localStorage.setItem(DELETED_REPORTS_KEY, JSON.stringify(list));
+    }
+  } catch (e) {}
+};
+
+export const isReportDeleted = (report, deletedIds = null) => {
+  if (!report) return false;
+  const list = deletedIds || getDeletedReportIds();
+  if (list.length === 0) return false;
+  const id = report.id ? String(report.id).trim() : null;
+  const ackId = report.ackId ? String(report.ackId).trim() : null;
+  const ack_id = report.ack_id ? String(report.ack_id).trim() : null;
+  const ackid = report.ackid ? String(report.ackid).trim() : null;
+  return Boolean(
+    (id && list.includes(id)) ||
+    (ackId && list.includes(ackId)) ||
+    (ack_id && list.includes(ack_id)) ||
+    (ackid && list.includes(ackid))
+  );
+};
+
 export function useReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
 
   const getCachedReports = () => {
+    const deletedList = getDeletedReportIds();
     try {
       const stored = localStorage.getItem(STORAGE_REPORTS_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(r => !isReportDeleted(r, deletedList));
+        }
       }
     } catch (e) {
       // ignore
     }
-    localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(SAMPLE_REPORTS));
-    return SAMPLE_REPORTS;
+    // Only on clean initial start when STORAGE_REPORTS_KEY has never been written
+    const initial = SAMPLE_REPORTS.filter(r => !isReportDeleted(r, deletedList));
+    localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(initial));
+    return initial;
   };
 
   const filterByRole = useCallback((rawList) => {
@@ -230,6 +282,8 @@ export function useReports() {
       return;
     }
 
+    const deletedList = getDeletedReportIds();
+
     try {
       let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
       if (
@@ -248,12 +302,14 @@ export function useReports() {
         setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT)
       );
       const { data, error } = await Promise.race([query, timeoutPromise]);
-      if (!error && data && data.length > 0) {
-        const normalized = data.map(normalizeReport);
-        setReports(normalized);
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const normalized = data
+          .map(normalizeReport)
+          .filter(r => !isReportDeleted(r, deletedList));
+        setReports(filterByRole(normalized));
         localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(normalized));
       } else {
-        // Fallback to cache / demo reports filtered by role
+        // Fallback to cache / demo reports filtered by role and tombstone
         const cached = getCachedReports();
         setReports(filterByRole(cached));
       }
@@ -264,6 +320,49 @@ export function useReports() {
       setLoading(false);
     }
   }, [user, profile, filterByRole]);
+
+  const deleteReport = useCallback(async (id, ackId) => {
+    const cleanId = id ? String(id).trim() : null;
+    const cleanAck = ackId ? String(ackId).trim() : null;
+
+    // 1. Mark as permanently deleted in tombstone storage
+    markReportAsDeleted(cleanId, cleanAck);
+
+    const matchesTarget = (r) => {
+      if (!r) return false;
+      if (cleanId && r.id && String(r.id).trim() === cleanId) return true;
+      if (cleanAck) {
+        if (r.ackId && String(r.ackId).trim() === cleanAck) return true;
+        if (r.ack_id && String(r.ack_id).trim() === cleanAck) return true;
+        if (r.ackid && String(r.ackid).trim() === cleanAck) return true;
+      }
+      return false;
+    };
+
+    // 2. Immediately update state so item vanishes instantly without delay
+    setReports(prev => prev.filter(r => !matchesTarget(r)));
+
+    // 3. Update localStorage cache
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_REPORTS_KEY) || '[]');
+      if (Array.isArray(stored)) {
+        const updated = stored.filter(r => !matchesTarget(r));
+        localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(updated));
+      }
+    } catch (e) {}
+
+    // 4. Delete from Supabase remotely in parallel
+    try {
+      if (cleanId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanId)) {
+        await supabase.from('reports').delete().eq('id', cleanId);
+      }
+      if (cleanAck) {
+        await supabase.from('reports').delete().eq('ackid', cleanAck);
+      }
+    } catch (e) {
+      console.warn("Supabase remote delete note:", e);
+    }
+  }, []);
 
   useEffect(() => {
     fetchReports();
@@ -277,5 +376,5 @@ export function useReports() {
     }
   }, [fetchReports]);
 
-  return { reports, loading, refetch: fetchReports };
+  return { reports, loading, refetch: fetchReports, deleteReport };
 }

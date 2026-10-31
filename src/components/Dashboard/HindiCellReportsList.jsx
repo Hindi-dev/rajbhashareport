@@ -16,9 +16,11 @@ export const HindiCellReportsList = ({ reports = [], sections = [], onEdit, onDe
     return true;
   });
 
-  const handleDelete = (id, sectionName) => {
-    if (window.confirm(`क्या आप वाकई ${sectionName} की इस रिपोर्ट को हटाना चाहते हैं?`)) {
-      onDelete(id);
+  const handleDelete = (rep) => {
+    const secName = rep.section_name || 'इस अनुभाग';
+    const reportRef = rep.ackId || rep.ack_id || rep.ackid || rep.id || '';
+    if (window.confirm(`क्या आप वाकई ${secName} की इस रिपोर्ट (${reportRef}) को हमेशा के लिए हटाना चाहते हैं?`)) {
+      onDelete(rep.id, rep.ackId || rep.ack_id || rep.ackid);
     }
   };
 
@@ -88,7 +90,7 @@ export const HindiCellReportsList = ({ reports = [], sections = [], onEdit, onDe
                       <td>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button type="button" className="btn btn-soft btn-sm" onClick={() => onEdit(rep)}>✏️ एडिट</button>
-                          <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(rep.id, rep.section_name)}>🗑️</button>
+                          <button type="button" className="btn btn-danger btn-sm" title="रिपोर्ट हमेशा के लिए हटाएँ" onClick={() => handleDelete(rep)}>🗑️</button>
                         </div>
                       </td>
                     </tr>

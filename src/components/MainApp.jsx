@@ -18,7 +18,7 @@ import { useToast } from './Common/Toast';
 
 export const MainApp = () => {
   const { user, profile, signOut, loading } = useAuth();
-  const { reports, loading: reportsLoading, refetch } = useReports();
+  const { reports, loading: reportsLoading, refetch, deleteReport } = useReports();
   const { sections, loading: sectionsLoading, addSection, deleteSection } = useSections();
   const [view, setView] = useState('dashboard');
   const viewInitialisedRole = React.useRef(null);
@@ -45,8 +45,9 @@ export const MainApp = () => {
     if (payload.b1_s11_special_achievements && !payload.b1_s11_special) {
       payload.b1_s11_special = payload.b1_s11_special_achievements;
     }
-    // Also provide snake_case versions for schema.sql compatibility
-    if (payload.ackId && !payload.ack_id) payload.ack_id = payload.ackId;
+    // Provide compatible columns for Supabase schema
+    if (payload.ackId) payload.ackid = payload.ackId;
+    delete payload.ack_id; // Postgres table uses 'ackid' or 'ackId', not 'ack_id'
     if (payload.officeNameAddress && !payload.office_name_address) payload.office_name_address = payload.officeNameAddress;
     if (payload.officerPhone && !payload.officer_phone) payload.officer_phone = payload.officerPhone;
     if (payload.officerEmail && !payload.officer_email) payload.officer_email = payload.officerEmail;
@@ -151,22 +152,10 @@ export const MainApp = () => {
     setView('form');
   };
 
-  const handleDeleteReport = async (id) => {
+  const handleDeleteReport = async (id, ackId) => {
     try {
-      try {
-        const { error } = await supabase.from('reports').delete().eq('id', id);
-        if (error) console.warn("Supabase delete note:", error);
-      } catch (e) {
-        console.warn("Supabase delete error:", e);
-      }
-      // Always sync local cache
-      try {
-        const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
-        const updated = stored.filter(r => r.id !== id);
-        localStorage.setItem('rajbhasha_reports_cache', JSON.stringify(updated));
-      } catch (e) {}
-      addToast?.("रिपोर्ट हटा दी गई", "success");
-      refetch();
+      await deleteReport(id, ackId);
+      addToast?.("रिपोर्ट सफलतापूर्वक हटा दी गई", "success");
     } catch (err) {
       addToast?.(err.message || "हटाने में त्रुटि", "error");
     }
