@@ -140,47 +140,45 @@ export const LoginScreen = () => {
       });
       setForgotStatus('sent');
     } catch (err) {
-      // In demo mode
       setForgotStatus('sent');
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans antialiased text-slate-900 bg-slate-50 selection:bg-indigo-500 selection:text-white">
-      {/* 1. National Tri-Color Accent Bar (Top of entire screen) */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-white to-emerald-600 sticky top-0 z-50 shadow-sm" />
+    <div className="min-h-screen flex flex-col justify-between font-sans antialiased text-slate-100 bg-gradient-to-br from-[#060813] via-[#0b1226] to-[#131130] selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+      
+      {/* 1. National Tri-Color Top Accent Ribbon */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-white to-emerald-600 sticky top-0 z-50 shadow-md shadow-black/30" />
 
-      {/* Main Split-Screen Container */}
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 relative">
+      {/* 2. Appealing Ambient Aurora Mesh Glow (100% Pure CSS) */}
+      <div className="fixed -top-40 -left-40 w-[650px] h-[650px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none animate-pulse duration-1000" />
+      <div className="fixed top-1/3 -right-40 w-[550px] h-[550px] bg-purple-600/18 rounded-full blur-[150px] pointer-events-none" />
+      <div className="fixed -bottom-40 left-1/3 w-[600px] h-[400px] bg-cyan-600/12 rounded-full blur-[130px] pointer-events-none" />
+      
+      {/* Subtle Geometric Grid Matrix Overlay */}
+      <div 
+        className="fixed inset-0 opacity-[0.035] pointer-events-none z-0"
+        style={{
+          backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
+          backgroundSize: '24px 24px'
+        }}
+      />
+
+      {/* 3. Main Split-Screen Section */}
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 relative z-10 max-w-[1600px] w-full mx-auto">
         
         {/* ============================================================
-            LEFT HALF (Desktop): Engaging Visual & Official Branding
-            Collapses to a minimal header on mobile (<lg)
+            LEFT HALF: Official Branding & Engaging Visual Experience
             ============================================================ */}
-        <section className="relative overflow-hidden bg-slate-950 text-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 border-b lg:border-b-0 lg:border-r border-indigo-950/40">
-          {/* Animated CSS Gradient Mesh & Ambient Glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 pointer-events-none opacity-90" />
-          
-          <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none animate-pulse duration-1000" />
-          <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none animate-pulse duration-700" />
-          
-          {/* Geometric grid overlay */}
-          <div 
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
-              backgroundSize: '24px 24px'
-            }}
-          />
-
-          {/* Top Branding & Crest Header */}
-          <div className="relative z-10 flex flex-col items-center lg:items-start text-center lg:text-left">
-            {/* Motto Badge with CAG Identity */}
-            <div className="inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-amber-300/30 backdrop-blur-md rounded-full py-1.5 px-4 mb-6 shadow-lg shadow-black/20 transition-all duration-200">
-              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-200/30 to-amber-400/10 border border-amber-300/40 flex items-center justify-center text-sm shadow-inner">
+        <section className="lg:col-span-7 xl:col-span-7 flex flex-col justify-center p-6 sm:p-10 lg:p-14 xl:p-16 relative">
+          <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
+            
+            {/* Motto Badge with Official CAG Crest */}
+            <div className="inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-amber-300/35 backdrop-blur-md rounded-full py-1.5 px-4 mb-6 shadow-xl shadow-black/25 transition-all duration-200">
+              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-200/30 to-amber-400/15 border border-amber-300/50 flex items-center justify-center text-sm shadow-inner">
                 🏛️
               </span>
-              <span className="text-sm font-extrabold tracking-wide text-amber-300 drop-shadow-sm">
+              <span className="text-sm sm:text-base font-black tracking-wide text-amber-300 drop-shadow-sm">
                 लोकहितार्थ सत्यनिष्ठा
               </span>
               <span className="text-white/30 hidden sm:inline">|</span>
@@ -189,88 +187,63 @@ export const LoginScreen = () => {
               </span>
             </div>
 
-            {/* Official Headquarters Title */}
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight mb-2 drop-shadow-md">
+            {/* Principal Office Header */}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.22] mb-3 drop-shadow-lg">
               प्रधान निदेशक लेखापरीक्षा का कार्यालय, रेलवे, मुंबई
             </h1>
-            <p className="text-sm sm:text-base text-slate-300 font-medium tracking-wide mb-5 max-w-xl">
+            <p className="text-sm sm:text-base xl:text-lg text-slate-300 font-medium tracking-wide mb-6">
               Office of the Principal Director of Audit (PDA), Railway, Mumbai
             </p>
 
             {/* Ministry Pill with Active Pulse Indicator */}
-            <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-purple-400/30 rounded-full py-1.5 px-4 text-xs font-semibold text-purple-200 backdrop-blur-sm shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+            <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-indigo-500/25 to-purple-500/25 border border-purple-400/35 rounded-full py-1.5 px-4 text-xs font-bold text-purple-200 backdrop-blur-md shadow-md mb-8">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
               <span>राजभाषा तिमाही प्रगति रिपोर्ट (QPR) प्रणाली · अनुलग्नक-2 (संशोधित प्रारूप)</span>
             </div>
-          </div>
 
-          {/* Middle: Core Workflow Highlights (Hidden on small mobile, visible on desktop) */}
-          <div className="hidden lg:flex flex-col gap-3 my-8 relative z-10">
-            {CAPABILITIES.map((cap, i) => (
-              <div 
-                key={i} 
-                className="flex items-start gap-3.5 bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm transition-all duration-200 hover:translate-x-1"
-              >
-                <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-lg flex-shrink-0">
-                  {cap.icon}
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">{cap.title}</h3>
-                  <p className="text-xs text-slate-300/80 leading-relaxed mt-0.5">{cap.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom: Canva-Inspired Developer Attribution Box */}
-          <div className="relative z-10 mt-6 lg:mt-0 pt-4 border-t border-white/10">
-            <div className="bg-gradient-to-r from-slate-900/80 to-indigo-950/80 border border-amber-300/30 rounded-2xl p-4 backdrop-blur-md shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-sm font-bold flex-shrink-0 shadow-inner">
-                  ✦
-                </div>
-                <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
-                    अभिकल्पना एवं विकास (DESIGNED & DEVELOPED BY)
+            {/* 4 Feature Cards Grid (Desktop View) */}
+            <div className="hidden lg:grid grid-cols-2 gap-3.5 pt-2">
+              {CAPABILITIES.map((cap, i) => (
+                <div 
+                  key={i} 
+                  className="flex items-start gap-3 bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 rounded-2xl p-3.5 backdrop-blur-md transition-all duration-200 hover:translate-x-1"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-lg flex-shrink-0">
+                    {cap.icon}
                   </div>
-                  <div className="text-sm font-bold text-white mt-0.5">
-                    भारत भूषण · <span className="text-slate-300 font-medium">वरिष्ठ अनुवाद अधिकारी (वरि.अ.अधि. / STO)</span>
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    कार्यालय प्रधान निदेशक लेखापरीक्षा (रेलवे), मुंबई · Western Railway
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-extrabold text-white">{cap.title}</h3>
+                    <p className="text-[11px] text-slate-300/80 leading-relaxed mt-0.5">{cap.desc}</p>
                   </div>
                 </div>
-              </div>
-              <div className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 rounded-full px-3 py-1 flex items-center gap-1.5 flex-shrink-0">
-                <span>🛡️</span>
-                <span>256-Bit SSL</span>
-              </div>
+              ))}
             </div>
+
           </div>
         </section>
 
         {/* ============================================================
-            RIGHT HALF: Centered Minimalist Authentication Stage
-            Clean background, soft drop shadow, glassmorphic card
+            RIGHT HALF: Centered Minimalist Authentication Card
             ============================================================ */}
-        <section className="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12 xl:p-16 relative bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-50">
+        <section className="lg:col-span-5 xl:col-span-5 flex items-center justify-center p-4 sm:p-8 lg:p-10 relative">
           <div className="w-full max-w-md">
             
             {/* The Authentication Card */}
-            <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 sm:p-9 shadow-2xl shadow-indigo-950/5 relative overflow-hidden transition-all duration-200">
+            <div className="bg-white/[0.97] backdrop-blur-2xl border border-white/60 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] rounded-3xl p-6 sm:p-9 text-slate-900 relative overflow-hidden transition-all duration-200">
               
-              {/* Card Top Header */}
+              {/* Card Top Row */}
               <div className="mb-6 text-center sm:text-left">
                 <div className="flex items-center justify-between mb-3">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
                     <span>🔒</span>
                     <span>विभागीय प्रमाणीकरण</span>
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
-                    Suraksha v2.5
+                  <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
+                    <span>✓</span>
+                    <span>Suraksha v2.5</span>
                   </span>
                 </div>
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
                   पोर्टल में प्रवेश (Sign In)
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
@@ -278,7 +251,7 @@ export const LoginScreen = () => {
                 </p>
               </div>
 
-              {/* Mode Switcher Tabs: 'विभागीय लॉगिन' vs 'टैस्ट रनिंग' */}
+              {/* Mode Switcher Tabs */}
               <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl mb-6 border border-slate-200/60">
                 <button
                   type="button"
@@ -504,7 +477,7 @@ export const LoginScreen = () => {
                   ============================================================ */}
               {activeTab === 'test_running' && (
                 <div className="space-y-4">
-                  <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
                     <span className="text-base flex-shrink-0">💡</span>
                     <span>
                       <strong>परीक्षण हेतु 1-क्लिक प्रवेश:</strong> किसी भी भूमिका कार्ड पर क्लिक करके सीधे डैशबोर्ड में प्रवेश किया जा सकता है।
@@ -575,21 +548,54 @@ export const LoginScreen = () => {
                 </div>
               )}
 
-              {/* Bottom Copyright and Security Subtext */}
-              <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-                <p className="text-[11px] text-slate-400 font-medium">
-                  © 2026 भारत सरकार · कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई
-                </p>
-              </div>
             </div>
           </div>
         </section>
       </div>
 
+      {/* ============================================================
+          4. FULL-WIDTH DEDICATED BOTTOM SECTION (पेज में सबसे नीचे)
+          Developer Credits + 256-Bit SSL Section
+          ============================================================ */}
+      <footer className="w-full relative z-20 border-t border-white/10 bg-slate-950/75 backdrop-blur-xl py-3.5 px-4 sm:px-8 lg:px-12 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+          
+          {/* Developer Attribution Info */}
+          <div className="flex items-center gap-3.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-300/40 flex items-center justify-center text-amber-300 text-sm font-black shadow-inner flex-shrink-0">
+              ✦
+            </div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300 drop-shadow-sm">
+                अभिकल्पना एवं विकास (DESIGNED & DEVELOPED BY)
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                भारत भूषण · <span className="text-slate-300 font-medium">वरिष्ठ अनुवाद अधिकारी (वरि.अ.अधि. / STO)</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5 font-medium">
+                कार्यालय प्रधान निदेशक लेखापरीक्षा (रेलवे), मुंबई · Western Railway
+              </div>
+            </div>
+          </div>
+
+          {/* Security & Verification Badges */}
+          <div className="flex items-center gap-4 flex-wrap justify-center md:justify-end">
+            <div className="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/30 rounded-full px-3.5 py-1 text-xs font-bold text-emerald-400 shadow-sm">
+              <span className="text-sm">🛡️</span>
+              <span>256-Bit SSL सुरक्षित शासकीय सर्वर</span>
+            </div>
+            <div className="text-[11px] text-slate-400 hidden sm:block">
+              © 2026 भारत सरकार · सर्वाधिकार सुरक्षित
+            </div>
+          </div>
+
+        </div>
+      </footer>
+
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-slate-900">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-extrabold text-slate-900">
                 पासवर्ड रीसेट (Reset Password)
