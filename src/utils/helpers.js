@@ -1,4 +1,4 @@
-import { QUARTERS } from '../constants/constants.js';
+import { QUARTERS, DEFAULT_OFFICE_DETAILS } from '../constants/constants.js';
 
 export function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -25,18 +25,22 @@ const num = (v) => parseFloat(normalizeDigits(v)) || 0;
 export function validateReport(data, { showPart2 = false } = {}) {
   const errors = [];
   
-  // Basic office details validation
-  if (!data.officeNameAddress || data.officeNameAddress.trim() === '') {
+  // Basic office details validation (uses default office details if locked for sections)
+  const officeName = data.officeNameAddress || DEFAULT_OFFICE_DETAILS?.officeNameAddress || '';
+  const officerPhone = data.officerPhone || DEFAULT_OFFICE_DETAILS?.officerPhone || '';
+  const officerEmail = data.officerEmail || DEFAULT_OFFICE_DETAILS?.officerEmail || '';
+
+  if (!officeName || officeName.trim() === '') {
     errors.push("कृपया कार्यालय का नाम और पूरा पता भरें।");
   }
-  if (!data.officerPhone || data.officerPhone.trim() === '') {
+  if (!officerPhone || officerPhone.trim() === '') {
     errors.push("कृपया संबंधित अधिकारी का फोन नंबर भरें।");
-  } else if (!/^[0-9+\-\s()०-९]{7,15}$/.test(data.officerPhone.trim())) {
+  } else if (!/^[0-9+\-\s()०-९]{7,15}$/.test(officerPhone.trim())) {
     errors.push("कृपया वैध फोन नंबर भरें (7 से 15 अंक)।");
   }
-  if (!data.officerEmail || data.officerEmail.trim() === '') {
+  if (!officerEmail || officerEmail.trim() === '') {
     errors.push("कृपया संबंधित अधिकारी का ईमेल भरें।");
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.officerEmail.trim())) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(officerEmail.trim())) {
     errors.push("कृपया वैध ईमेल पता भरें।");
   }
 

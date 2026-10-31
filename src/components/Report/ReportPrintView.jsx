@@ -33,33 +33,26 @@ export const ReportPrintView = ({ report, onClose }) => {
           </div>
         </div>
 
-        {/* Office Details */}
+        {/* Section Details (कार्यालय पता व अधिकारी संपर्क विवरण केवल समेकित रिपोर्ट में मुद्रित होंगे) */}
         <table style={{ width: '100%', marginBottom: 16 }}>
           <tbody>
             <tr>
-              <td style={{ width: '20%', fontWeight: 700, background: 'var(--surface-2)' }}>अनुभाग का नाम</td>
-              <td style={{ width: '30%' }}>{report.section_name}</td>
-              <td style={{ width: '20%', fontWeight: 700, background: 'var(--surface-2)' }}>कार्यालय का क्षेत्र</td>
-              <td style={{ width: '30%' }}>क्षेत्र '{report.region}'</td>
+              <td style={{ width: '22%', fontWeight: 700, background: 'var(--surface-2)' }}>अनुभाग का नाम</td>
+              <td style={{ width: '28%', fontWeight: 700, color: '#1e3a8a' }}>{report.section_name}</td>
+              <td style={{ width: '22%', fontWeight: 700, background: 'var(--surface-2)' }}>कार्यालय का क्षेत्र</td>
+              <td style={{ width: '28%' }}>क्षेत्र '{report.region || 'ख'}'</td>
             </tr>
             <tr>
               <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>तिमाही एवं वर्ष</td>
               <td>{quarterLabel(report.quarter)} · वर्ष {report.year}</td>
               <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>पावती सं. (Ack ID)</td>
-              <td style={{ fontFamily: 'monospace' }}>{report.ackId}</td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>कार्यालय का पता</td>
-              <td colSpan="3">{report.officeNameAddress || '—'}</td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>अधिकारी दूरभाष / ईमेल</td>
-              <td>{report.officerPhone || '—'}</td>
-              <td colSpan="2">{report.officerEmail || '—'}</td>
+              <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{report.ackId}</td>
             </tr>
             <tr>
               <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>रिपोर्ट स्थिति</td>
-              <td colSpan="3"><strong>{st.label}</strong></td>
+              <td><strong>{st.label}</strong></td>
+              <td style={{ fontWeight: 700, background: 'var(--surface-2)' }}>प्रमाण-पत्र स्थिति</td>
+              <td>{report.certificate_pdf_url ? '✅ हस्ताक्षरित PDF संलग्न' : 'हस्ताक्षरित डिजिटल प्रति'}</td>
             </tr>
           </tbody>
         </table>

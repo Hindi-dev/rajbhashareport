@@ -1,16 +1,43 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { QUARTERS, YEARS, quarterLabel } from '../../constants/constants';
+import { QUARTERS, YEARS, DEFAULT_OFFICE_DETAILS, quarterLabel } from '../../constants/constants';
 import { getCurrentQuarterYear } from '../../utils/helpers';
 
 const num = (v) => parseFloat(v) || 0;
 const val = (v) => (v === undefined || v === null || v === '' ? '0' : v);
 const pctOf = (part, total) => (num(total) > 0 ? `${Math.round((num(part) / num(total)) * 100)}%` : '-');
 
+const STORAGE_OFFICE_KEY = 'rajbhasha_office_details_master';
+
 export const ConsolidatedReport = ({ reports = [], selectedSections = [], sections = [], onBack }) => {
   const { quarter: currentQuarter, year: currentYear } = getCurrentQuarterYear(reports);
   const [quarter, setQuarter] = useState(currentQuarter);
   const [year, setYear] = useState(currentYear);
   const [excludedSections, setExcludedSections] = useState([]);
+  const [showOfficeEdit, setShowOfficeEdit] = useState(false);
+
+  const [officeDetails, setOfficeDetails] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_OFFICE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // ignore
+    }
+    return {
+      officeNameAddress: DEFAULT_OFFICE_DETAILS?.officeNameAddress || 'कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई - 400020',
+      officerPhone: DEFAULT_OFFICE_DETAILS?.officerPhone || '022-22017242',
+      officerEmail: DEFAULT_OFFICE_DETAILS?.officerEmail || 'pdarailwaymumbai@cag.gov.in',
+    };
+  });
+
+  const updateOfficeDetails = (k, v) => {
+    setOfficeDetails(prev => {
+      const updated = { ...prev, [k]: v };
+      try {
+        localStorage.setItem(STORAGE_OFFICE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   const preselectedNames = useMemo(
     () => sections.filter(s => selectedSections.includes(s.id)).map(s => s.section_name),
@@ -111,20 +138,114 @@ export const ConsolidatedReport = ({ reports = [], selectedSections = [], sectio
         </div>
       </div>
 
-      <div className="standard-doc">
-        <h2>राजभाषा के प्रगामी प्रयोग के संबंध में समेकित तिमाही प्रगति रिपोर्ट</h2>
-        <h3>(अनुलग्नक-2)</h3>
+      {/* कार्यालय विवरण 1 - केवल राजभाषा अनुभाग समेकित रिपोर्ट तैयार/प्रिंट करते समय */}
+      <div className="no-print card" style={{ marginBottom: 16 }}>
+        <div className="card-head" style={{ padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🏢</span>
+            <h3 className="card-title" style={{ margin: 0, fontSize: 14 }}>
+              कार्यालय विवरण 1 (समेकित रिपोर्ट प्रिंटिंग हेतु मुख्यालय विवरण)
+            </h3>
+            <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+              राजभाषा अनुभाग नियंत्रण
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowOfficeEdit(!showOfficeEdit)}
+            style={{ fontSize: 12, fontWeight: 700 }}
+          >
+            {showOfficeEdit ? '✓ विवरण सहेजें' : '✏️ विवरण देखें / संपादित करें'}
+          </button>
+        </div>
+        <div className="card-body" style={{ paddingTop: 10, paddingBottom: 14 }}>
+          {showOfficeEdit ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+              <div className="field">
+                <label className="field-label" style={{ fontWeight: 700 }}>कार्यालय का नाम और पूरा पता</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={officeDetails.officeNameAddress}
+                  onChange={e => updateOfficeDetails('officeNameAddress', e.target.value)}
+                  placeholder="कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई..."
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                <div className="field">
+                  <label className="field-label" style={{ fontWeight: 700 }}>राजभाषा अधिकारी/प्रभारी का फोन नं.</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={officeDetails.officerPhone}
+                    onChange={e => updateOfficeDetails('officerPhone', e.target.value)}
+                    placeholder="022-22017242"
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" style={{ fontWeight: 700 }}>अधिकारी की ई-मेल आईडी</label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={officeDetails.officerEmail}
+                    onChange={e => updateOfficeDetails('officerEmail', e.target.value)}
+                    placeholder="pdarailwaymumbai@cag.gov.in"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8 }}>
+              <div><strong>कार्यालय:</strong> {officeDetails.officeNameAddress}</div>
+              <div><strong>दूरभाष:</strong> {officeDetails.officerPhone}</div>
+              <div><strong>ई-मेल:</strong> {officeDetails.officerEmail}</div>
+            </div>
+          )}
+        </div>
+      </div>
 
-        <table>
+      <div className="standard-doc">
+        <div style={{ textAlign: 'center', marginBottom: 20, borderBottom: '2px solid #0f172a', paddingBottom: 14 }}>
+          <div style={{ fontSize: 26 }}>🏛️</div>
+          <h1 style={{ fontSize: 18, fontWeight: 800, margin: '4px 0', color: '#0f172a' }}>
+            {officeDetails.officeNameAddress?.split(',')[0] || 'प्रधान निदेशक लेखापरीक्षा का कार्यालय, रेलवे, मुंबई'}
+          </h1>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '2px 0', color: 'var(--brand, #1e3a8a)' }}>
+            राजभाषा के प्रगामी प्रयोग के संबंध में समेकित तिमाही प्रगति रिपोर्ट (समेकित QPR)
+          </h2>
+          <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
+            गृह मंत्रालय, राजभाषा विभाग (संशोधित प्रारूप अप्रैल 2025) · अनुलग्नक-2
+          </div>
+        </div>
+
+        {/* कार्यालय विवरण 1 - केवल राजभाषा अनुभाग द्वारा समेकित रिपोर्ट प्रिंट करते समय प्रदर्शित */}
+        <h4 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>
+          कार्यालय विवरण 1 (मुख्यालय एवं राजभाषा संपर्क विवरण)
+        </h4>
+        <table style={{ width: '100%', marginBottom: 16 }}>
           <tbody>
             <tr>
-              <td style={{ width: '50%', border: 'none' }}><strong>कार्यालय:</strong> पश्चिम रेलवे (विभिन्न अनुभाग)</td>
-              <td style={{ width: '25%', border: 'none' }}><strong>तिमाही:</strong> {quarterLabel(quarter)}</td>
-              <td style={{ width: '25%', border: 'none' }}><strong>वर्ष:</strong> {year}</td>
+              <td style={{ width: '25%', fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>कार्यालय का नाम और पूरा पता</td>
+              <td colSpan="3" style={{ fontWeight: 700, color: '#0f172a' }}>{officeDetails.officeNameAddress}</td>
             </tr>
             <tr>
-              <td style={{ border: 'none' }}><strong>समेकित अनुभाग:</strong> {selectedCount}</td>
-              <td style={{ border: 'none' }} colSpan="2"><strong>क्षेत्र:</strong> 'क', 'ख' एवं 'ग'</td>
+              <td style={{ width: '25%', fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>राजभाषा अधिकारी/प्रभारी का फोन नं.</td>
+              <td style={{ width: '25%', fontWeight: 600 }}>{officeDetails.officerPhone}</td>
+              <td style={{ width: '25%', fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>अधिकारी की ई-मेल आईडी</td>
+              <td style={{ width: '25%', fontWeight: 600 }}>{officeDetails.officerEmail}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>तिमाही एवं वित्तीय वर्ष</td>
+              <td><strong>{quarterLabel(quarter)} · वर्ष {year}</strong></td>
+              <td style={{ fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>समेकित अनुभाग</td>
+              <td><strong>कुल {selectedCount} अनुभाग सम्मिलित</strong></td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>कार्यालय का क्षेत्र</td>
+              <td>क्षेत्र 'क', 'ख' एवं 'ग' (संयुक्त)</td>
+              <td style={{ fontWeight: 700, background: 'var(--surface-2, #f8fafc)' }}>रिपोर्ट सृजन तिथि</td>
+              <td>{new Date().toLocaleDateString('hi-IN')}</td>
             </tr>
           </tbody>
         </table>

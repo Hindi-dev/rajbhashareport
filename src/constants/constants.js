@@ -107,10 +107,20 @@ export function genId() {
   return `RAJ-${Date.now().toString(36).toUpperCase().slice(-7)}`;
 }
 
+export const DEFAULT_OFFICE_DETAILS = {
+  officeNameAddress: "कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई - 400020",
+  officerPhone: "022-22017242",
+  officerEmail: "pdarailwaymumbai@cag.gov.in",
+  officerName: "श्री राकेश वर्मा",
+  officerDesignation: "वरिष्ठ राजभाषा अधिकारी"
+};
+
 export const EMPTY_FORM = {
-  officeNameAddress: "", officerPhone: "", officerEmail: "", 
+  officeNameAddress: DEFAULT_OFFICE_DETAILS.officeNameAddress,
+  officerPhone: DEFAULT_OFFICE_DETAILS.officerPhone,
+  officerEmail: DEFAULT_OFFICE_DETAILS.officerEmail, 
   year: "2026", quarter: "Q4", ackId: genId(),
-  region: "क",
+  region: "ख",
   b1_s1_total_files: "", b1_s1_hindi_files: "",
   b1_s2_total_meetings: "", b1_s2_hindi_minutes: "", b1_s2_total_docs: "", b1_s2_hindi_docs: "",
   b1_s3_total_issued: "", b1_s3_bilingual: "", b1_s3_english_only: "", b1_s3_hindi_only: "",

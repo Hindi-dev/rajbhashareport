@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { EMPTY_FORM, QUARTERS, YEARS, SECTION_COLORS, isHindiSectionUser, quarterLabel, genId } from '../../constants/constants';
+import { EMPTY_FORM, DEFAULT_OFFICE_DETAILS, QUARTERS, YEARS, SECTION_COLORS, isHindiSectionUser, quarterLabel, genId } from '../../constants/constants';
 import { validateReport, hindiPct } from '../../utils/helpers';
 import { useAuth } from '../../hooks/useAuth';
 import { Inp, Num, Radio, SecCard, Grid, TblInput } from '../Common/UIComponents';
@@ -14,7 +14,14 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sectio
   const [data, setData] = useState(() => {
     const base = initialData || { ...EMPTY_FORM, ackId: genId() };
     const defaultSec = base.section_name || (profile?.section_name && profile.section_name !== 'सभी अनुभाग' ? profile.section_name : (sections[0]?.section_name || ""));
-    const merged = { ...EMPTY_FORM, ...base, section_name: defaultSec };
+    const merged = {
+      ...EMPTY_FORM,
+      ...base,
+      officeNameAddress: base.officeNameAddress || DEFAULT_OFFICE_DETAILS?.officeNameAddress,
+      officerPhone: base.officerPhone || DEFAULT_OFFICE_DETAILS?.officerPhone,
+      officerEmail: base.officerEmail || DEFAULT_OFFICE_DETAILS?.officerEmail,
+      section_name: defaultSec
+    };
     if (!merged.b1_cert_phone && merged.officerPhone) merged.b1_cert_phone = merged.officerPhone;
     if (!merged.b1_cert_date) merged.b1_cert_date = new Date().toISOString().split('T')[0];
     if (!merged.b1_cert_place) merged.b1_cert_place = "मुंबई";
@@ -213,27 +220,102 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sectio
           )}
 
           <SecCard title={t.stepOffice} icon="🏢" color={SECTION_COLORS[0]}>
-            <Inp
-              label={lang === 'hi' ? "कार्यालय का नाम और पूरा पता" : "Office Name & Full Address"}
-              value={data.officeNameAddress}
-              onChange={v => set("officeNameAddress", v)}
-              placeholder={lang === 'hi' ? "जैसे: कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई" : "e.g., Office of the Principal Director of Audit, Railway, Mumbai"}
-            />
-            <Grid>
-              <Inp
-                label={lang === 'hi' ? "राजभाषा अधिकारी / प्रभारी का फोन नं." : "Official Language Officer / In-charge Phone No."}
-                value={data.officerPhone}
-                onChange={v => set("officerPhone", v)}
-                placeholder="022-xxxxxxxx"
-              />
-              <Inp
-                label={lang === 'hi' ? "अधिकारी की ई-मेल आईडी" : "Officer Email ID"}
-                value={data.officerEmail}
-                onChange={v => set("officerEmail", v)}
-                type="email"
-                placeholder="officer@gov.in"
-              />
-            </Grid>
+            {/* Locked Headquarters / Rajbhasha Officer Details for all sections */}
+            <div style={{
+              background: '#f8fafc',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 12,
+              padding: '16px 18px',
+              marginBottom: 18,
+              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 18 }}>🔒</span>
+                  <span style={{ fontWeight: 800, fontSize: 13.5, color: '#1e293b' }}>
+                    कार्यालय विवरण 1 (सभी अनुभागों के लिए लॉक)
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: '#fef2f2',
+                  color: '#b91c1c',
+                  border: '1px solid #fecaca',
+                  padding: '3px 10px',
+                  borderRadius: 16,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}>
+                  🔒 केवल राजभाषा अनुभाग समेकित रिपोर्ट प्रिंटिंग हेतु
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                <div className="field">
+                  <label className="field-label" style={{ color: '#475569', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                    <span>कार्यालय का नाम और पूरा पता</span>
+                    <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔒 [लॉक]</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={data.officeNameAddress || DEFAULT_OFFICE_DETAILS?.officeNameAddress || "कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई - 400020"}
+                    disabled
+                    readOnly
+                    title="यह विवरण सभी अनुभागों के लिए लॉक है। यह केवल राजभाषा अनुभाग द्वारा समेकित रिपोर्ट प्राप्त/प्रिंट करते समय प्रदर्शित होगा।"
+                    style={{ background: '#f1f5f9', color: '#475569', cursor: 'not-allowed', fontWeight: 600, border: '1px solid #cbd5e1' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                  <div className="field">
+                    <label className="field-label" style={{ color: '#475569', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      <span>राजभाषा अधिकारी/प्रभारी का फोन नं.</span>
+                      <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔒 [लॉक]</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={data.officerPhone || DEFAULT_OFFICE_DETAILS?.officerPhone || "022-22017242"}
+                      disabled
+                      readOnly
+                      title="यह विवरण सभी अनुभागों के लिए लॉक है। यह केवल राजभाषा अनुभाग द्वारा समेकित रिपोर्ट प्राप्त/प्रिंट करते समय प्रदर्शित होगा।"
+                      style={{ background: '#f1f5f9', color: '#475569', cursor: 'not-allowed', fontWeight: 600, border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="field-label" style={{ color: '#475569', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      <span>अधिकारी की ई-मेल आईडी</span>
+                      <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔒 [लॉक]</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={data.officerEmail || DEFAULT_OFFICE_DETAILS?.officerEmail || "pdarailwaymumbai@cag.gov.in"}
+                      disabled
+                      readOnly
+                      title="यह विवरण सभी अनुभागों के लिए लॉक है। यह केवल राजभाषा अनुभाग द्वारा समेकित रिपोर्ट प्राप्त/प्रिंट करते समय प्रदर्शित होगा।"
+                      style={{ background: '#f1f5f9', color: '#475569', cursor: 'not-allowed', fontWeight: 600, border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                fontSize: 11.5,
+                color: '#64748b',
+                marginTop: 10,
+                lineHeight: 1.5,
+                padding: '8px 12px',
+                background: '#ffffff',
+                borderRadius: 8,
+                border: '1px dashed #e2e8f0'
+              }}>
+                ℹ️ <strong>विभागीय निर्देश:</strong> कार्यालय का नाम/पता, राजभाषा अधिकारी का फोन नं. और ई-मेल आईडी संपूर्ण कार्यालय स्तर के होने के कारण सभी अनुभागों के लिए लॉक हैं। यह विकल्प केवल <strong>राजभाषा अनुभाग</strong> द्वारा <strong>समेकित रिपोर्ट (Consolidated QPR)</strong> प्राप्त एवं प्रिंट करते समय ही आधिकारिक रूप से प्रदर्शित होगा।
+              </div>
+            </div>
             <Grid cols={3}>
               <div className="field">
                 <label className="field-label">{lang === 'hi' ? "वित्तीय वर्ष" : "Financial Year"}</label>
@@ -698,8 +780,8 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sectio
               background: "var(--surface-2)", borderRadius: 14, padding: 18,
               border: "1px solid var(--line)", fontSize: 13, color: "var(--ink-2)", lineHeight: 2, marginBottom: 18
             }}>
-              <div><strong>कार्यालय / अनुभाग:</strong> {data.section_name} ({data.officeNameAddress || "पता दर्ज नहीं"})</div>
-              <div><strong>तिमाही एवं वर्ष:</strong> {quarterLabel(data.quarter)} · वर्ष {data.year} (क्षेत्र: {data.region})</div>
+              <div><strong>संबंधित अनुभाग:</strong> {data.section_name} (क्षेत्र: '{data.region}')</div>
+              <div><strong>तिमाही एवं वर्ष:</strong> {quarterLabel(data.quarter)} · वर्ष {data.year}</div>
               <div><strong>पावती सं. (Ack ID):</strong> {data.ackId}</div>
               <div>
                 <strong>हस्ताक्षरित PDF प्रमाण-पत्र:</strong>{" "}
