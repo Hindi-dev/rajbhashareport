@@ -67,7 +67,7 @@ const CAPABILITIES = [
 ];
 
 export const LoginScreen = () => {
-  const [activeTab, setActiveTab] = useState('quick'); // 'quick' | 'credentials'
+  const [activeTab, setActiveTab] = useState('credentials'); // 'credentials' (default) | 'test_running'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -189,83 +189,27 @@ export const LoginScreen = () => {
           <div className="mode-tabs">
             <button
               type="button"
-              className={`mode-tab ${activeTab === 'quick' ? 'is-active' : ''}`}
-              onClick={() => { setActiveTab('quick'); setError(''); }}
-            >
-              <span>⚡ त्वरित भूमिका चयन</span>
-              <span className="tab-pill">अनुशंसित</span>
-            </button>
-            <button
-              type="button"
               className={`mode-tab ${activeTab === 'credentials' ? 'is-active' : ''}`}
               onClick={() => { setActiveTab('credentials'); setError(''); }}
             >
-              <span>🔑 विभागीय ईमेल / पासवर्ड</span>
+              <span>🔑 विभागीय लॉगिन</span>
+              <span className="tab-pill">अधिकृत</span>
+            </button>
+            <button
+              type="button"
+              className={`mode-tab ${activeTab === 'test_running' ? 'is-active' : ''}`}
+              onClick={() => { setActiveTab('test_running'); setError(''); }}
+            >
+              <span>🧪 विकल्प: टैस्ट रनिंग</span>
+              <span className="tab-pill tab-pill-test">04 फील्ड्स</span>
             </button>
           </div>
 
-          {/* TAB 1: Quick Role Selection (Instant One-Click Login) */}
-          {activeTab === 'quick' && (
-            <div className="roles-view">
-              <div className="roles-grid">
-                {ROLES_LIST.map((r) => {
-                  const isProcessing = loggingInRole === r.key;
-                  return (
-                    <div
-                      key={r.key}
-                      className={`role-card ${isProcessing ? 'is-processing' : ''}`}
-                      style={{ '--role-color': r.color, '--role-bg': r.bg, '--role-border': r.border }}
-                      onClick={() => !loggingInRole && handleQuickRoleLogin(r.key)}
-                    >
-                      <div className="role-card-top">
-                        <div className="role-icon-box" style={{ background: r.accentGrad }}>
-                          {r.icon}
-                        </div>
-                        <span className="role-tag" style={{ color: r.color, background: r.bg, borderColor: r.border }}>
-                          {r.badge}
-                        </span>
-                      </div>
-
-                      <div className="role-info">
-                        <div className="role-name">{r.title}</div>
-                        <div className="role-name-en">{r.titleEn}</div>
-                        <div className="role-meta">
-                          <span className="user-icon">👤</span>
-                          <span>{r.name} ({r.section})</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="role-enter-btn"
-                        style={{ background: isProcessing ? '#0f172a' : r.accentGrad }}
-                        disabled={Boolean(loggingInRole)}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickRoleLogin(r.key);
-                        }}
-                      >
-                        {isProcessing ? 'प्रवेश हो रहा है...' : 'सीधे प्रवेश करें →'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="quick-hint">
-                <span>💡</span>
-                <span>
-                  परीक्षण हेतु किसी भी भूमिका कार्ड पर क्लिक करके सीधे डैशबोर्ड में प्रवेश किया जा सकता है।
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: Departmental Credentials Form */}
+          {/* TAB 1: Departmental Credentials Form (Professional & Secure) */}
           {activeTab === 'credentials' && (
             <form onSubmit={handleCredentialsLogin} className="credentials-form">
               <div className="input-group">
-                <label className="input-label">विभागीय ईमेल आईडी (Email ID)</label>
+                <label className="input-label">विभागीय ईमेल आईडी (Official Email ID)</label>
                 <div className="input-wrapper">
                   <span className="field-icon">📧</span>
                   <input
@@ -273,7 +217,7 @@ export const LoginScreen = () => {
                     className="styled-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="user@railway.gov.in"
+                    placeholder="user@railway.gov.in / cag.gov.in"
                     required
                     autoComplete="email"
                   />
@@ -319,26 +263,117 @@ export const LoginScreen = () => {
                 className="btn-submit-login"
                 disabled={loading}
               >
-                {loading ? 'प्रमाणीकरण हो रहा है...' : 'लॉगिन करें (Sign In) →'}
+                {loading ? 'प्रमाणीकरण हो रहा है...' : 'पोर्टल में सुरक्षित प्रवेश करें (Sign In) →'}
               </button>
 
-              {/* Quick Fill Pills */}
-              <div className="quick-fill-section">
-                <div className="quick-fill-title">क्रेडेंशियल्स स्वतः भरें (Autofill Demo):</div>
-                <div className="quick-fill-chips">
-                  {ROLES_LIST.map(r => (
-                    <button
-                      key={r.key}
-                      type="button"
-                      className="fill-chip"
-                      onClick={() => prefillRoleCredentials(r.key)}
-                    >
-                      {r.icon} {r.badge.split(' / ')[1] || r.key.toUpperCase()}
-                    </button>
-                  ))}
+              {/* 'टैस्ट रनिंग' विकल्प कार्ड (Test Running Option Container) */}
+              <div className="test-running-box">
+                <div className="test-box-header">
+                  <div className="test-box-badge">🧪 विकल्प: टैस्ट रनिंग (Test Running)</div>
+                </div>
+                <p className="test-box-desc">
+                  परीक्षण हेतु किसी भी भूमिका कार्ड पर क्लिक करके सीधे डैशबोर्ड में प्रवेश किया जा सकता है:
+                </p>
+                <button
+                  type="button"
+                  className="btn-open-test-running"
+                  onClick={() => { setActiveTab('test_running'); setError(''); }}
+                >
+                  <span>🚀 'टैस्ट रनिंग' के 04 फील्ड देखें एवं 1-क्लिक प्रवेश करें →</span>
+                </button>
+
+                <div className="quick-fill-row">
+                  <span className="quick-fill-label">क्रेडेंशियल्स स्वतः भरें (Autofill):</span>
+                  <div className="quick-fill-chips">
+                    {ROLES_LIST.map(r => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        className="fill-chip"
+                        onClick={() => prefillRoleCredentials(r.key)}
+                        title={`${r.name} (${r.title})`}
+                      >
+                        {r.icon} {r.badge.split(' / ')[1] || r.key.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </form>
+          )}
+
+          {/* TAB 2: Dedicated 'Test Running' Option (04 Role Fields) */}
+          {activeTab === 'test_running' && (
+            <div className="test-running-view">
+              <div className="test-running-header">
+                <div className="test-running-badge-pill">
+                  <span>🧪</span>
+                  <span>विकल्प: टैस्ट रनिंग (Test Running Mode)</span>
+                </div>
+                <div className="test-running-instruction">
+                  <span className="inst-icon">💡</span>
+                  <span>
+                    <strong>परीक्षण हेतु किसी भी भूमिका कार्ड पर क्लिक करके सीधे डैशबोर्ड में प्रवेश किया जा सकता है:</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* 04 Role Cards */}
+              <div className="roles-grid">
+                {ROLES_LIST.map((r) => {
+                  const isProcessing = loggingInRole === r.key;
+                  return (
+                    <div
+                      key={r.key}
+                      className={`role-card ${isProcessing ? 'is-processing' : ''}`}
+                      style={{ '--role-color': r.color, '--role-bg': r.bg, '--role-border': r.border }}
+                      onClick={() => !loggingInRole && handleQuickRoleLogin(r.key)}
+                    >
+                      <div className="role-card-top">
+                        <div className="role-icon-box" style={{ background: r.accentGrad }}>
+                          {r.icon}
+                        </div>
+                        <span className="role-tag" style={{ color: r.color, background: r.bg, borderColor: r.border }}>
+                          {r.badge}
+                        </span>
+                      </div>
+
+                      <div className="role-info">
+                        <div className="role-name">{r.title}</div>
+                        <div className="role-name-en">{r.titleEn}</div>
+                        <div className="role-meta">
+                          <span className="user-icon">👤</span>
+                          <span>{r.name} ({r.section})</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="role-enter-btn"
+                        style={{ background: isProcessing ? '#0f172a' : r.accentGrad }}
+                        disabled={Boolean(loggingInRole)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickRoleLogin(r.key);
+                        }}
+                      >
+                        {isProcessing ? 'प्रवेश हो रहा है...' : 'सीधे डैशबोर्ड में प्रवेश करें →'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="test-running-footer-row">
+                <button
+                  type="button"
+                  className="btn-back-to-credentials"
+                  onClick={() => { setActiveTab('credentials'); setError(''); }}
+                >
+                  ← विभागीय लॉगिन फॉर्म पर वापस जाएं
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Footer Legal & Security */}
@@ -666,13 +701,81 @@ export const LoginScreen = () => {
           border-radius: 999px;
           font-weight: 700;
         }
+        .tab-pill-test {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        /* Test Running Dedicated Container (Tab 2) */
+        .test-running-view {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          animation: fade-in 0.22s ease;
+        }
+        .test-running-header {
+          background: #f8fafc;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 14px;
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .test-running-badge-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 800;
+          color: #b45309;
+          background: #fef3c7;
+          border: 1px solid #fde68a;
+          padding: 3px 10px;
+          border-radius: 20px;
+          align-self: flex-start;
+        }
+        .test-running-instruction {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          font-size: 12px;
+          color: #1e293b;
+          line-height: 1.45;
+        }
+        .inst-icon {
+          font-size: 16px;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .test-running-footer-row {
+          display: flex;
+          justify-content: center;
+          padding-top: 4px;
+        }
+        .btn-back-to-credentials {
+          padding: 9px 18px;
+          background: #f1f5f9;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+          font-family: inherit;
+          font-size: 12px;
+          font-weight: 700;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.18s ease;
+        }
+        .btn-back-to-credentials:hover {
+          background: #e2e8f0;
+          color: #0f172a;
+        }
 
         /* Roles Grid */
         .roles-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
         }
         .role-card {
           border: 1.5px solid var(--role-border);
@@ -890,15 +993,74 @@ export const LoginScreen = () => {
           cursor: not-allowed;
         }
 
-        .quick-fill-section {
-          padding-top: 14px;
-          border-top: 1px solid #f1f5f9;
+        /* 'टैस्ट रनिंग' विकल्प कार्ड (Test Running Option Card inside Credentials) */
+        .test-running-box {
+          margin-top: 14px;
+          padding: 13px 15px;
+          background: #f8fafc;
+          border: 1.5px dashed #cbd5e1;
+          border-radius: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
         }
-        .quick-fill-title {
+        .test-box-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .test-box-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           font-size: 11px;
+          font-weight: 800;
+          color: #4338ca;
+          background: #eef2ff;
+          border: 1px solid #c7d2fe;
+          padding: 3px 10px;
+          border-radius: 20px;
+        }
+        .test-box-desc {
+          font-size: 11.5px;
+          color: #475569;
+          margin: 0;
+          line-height: 1.45;
+          font-weight: 600;
+        }
+        .btn-open-test-running {
+          width: 100%;
+          padding: 10px 14px;
+          border: 1.5px solid #a5b4fc;
+          background: #ffffff;
+          color: #4338ca;
+          font-family: inherit;
+          font-size: 12px;
+          font-weight: 750;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 1px 3px rgba(67, 56, 202, 0.08);
+        }
+        .btn-open-test-running:hover {
+          background: #eef2ff;
+          border-color: #6366f1;
+          transform: translateY(-1px);
+        }
+        .quick-fill-row {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding-top: 8px;
+          border-top: 1px dashed #e2e8f0;
+        }
+        .quick-fill-label {
+          font-size: 10.5px;
           font-weight: 700;
           color: #64748b;
-          margin-bottom: 8px;
         }
         .quick-fill-chips {
           display: flex;
@@ -909,12 +1071,12 @@ export const LoginScreen = () => {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 6px 12px;
+          padding: 5px 11px;
           border-radius: 8px;
-          background: #f8fafc;
+          background: #ffffff;
           border: 1px solid #e2e8f0;
           font-family: inherit;
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 700;
           color: #334155;
           cursor: pointer;
