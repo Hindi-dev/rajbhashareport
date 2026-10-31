@@ -343,7 +343,6 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sectio
                   className="select"
                   value={data.section_name || ""}
                   onChange={e => set("section_name", e.target.value)}
-                  disabled={Boolean(initialData) || (profile?.role === 'DEO' && Boolean(profile?.section_name && profile.section_name !== 'सभी अनुभाग'))}
                 >
                   {sections.map(s => (
                     <option key={s.id} value={s.section_name}>{s.section_name}</option>
@@ -358,10 +357,10 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sectio
                 <input
                   type="text"
                   className="input"
-                  value={data.ackId}
-                  readOnly
-                  disabled
-                  style={{ background: 'var(--surface-2)', fontFamily: 'monospace', fontWeight: 700 }}
+                  value={data.ackId || ""}
+                  onChange={e => set("ackId", e.target.value)}
+                  placeholder="उदा. QPR-2026-ADM"
+                  style={{ fontFamily: 'monospace', fontWeight: 700 }}
                 />
               </div>
             </Grid>
