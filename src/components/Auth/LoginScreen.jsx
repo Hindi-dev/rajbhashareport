@@ -125,7 +125,7 @@ export const LoginScreen = () => {
             <div className="emblem-wrapper">
               <div className="emblem-icon">🏛️</div>
               <div className="emblem-badge">
-                <span>सत्यमेव जयते</span>
+                <span className="emblem-motto">लोकहितार्थ सत्यनिष्ठा</span>
                 <span className="emblem-sub">CAG · INDIAN AUDIT & ACCOUNTS DEPT.</span>
               </div>
             </div>
@@ -468,14 +468,14 @@ export const LoginScreen = () => {
           transition: all 0.3s ease;
         }
 
-        /* ── Left Showcase Panel ── */
+        /* ── Left Showcase Panel (Canva Style Refined Aesthetics) ── */
         .login-left-panel {
-          padding: 44px 40px;
+          padding: 42px 38px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          gap: 28px;
-          background: linear-gradient(165deg, rgba(67, 56, 202, 0.94) 0%, rgba(91, 33, 182, 0.92) 50%, rgba(126, 34, 206, 0.9) 100%);
+          gap: 22px;
+          background: linear-gradient(162deg, #3730a3 0%, #4338ca 32%, #581c87 75%, #6b21a8 100%);
           color: #fff;
           position: relative;
         }
@@ -484,50 +484,52 @@ export const LoginScreen = () => {
           display: flex;
           align-items: center;
           gap: 14px;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
         }
         .emblem-icon {
           width: 52px;
           height: 52px;
           border-radius: 16px;
-          background: rgba(255, 255, 255, 0.18);
-          border: 1.5px solid rgba(255, 255, 255, 0.28);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+          border: 1.5px solid rgba(254, 240, 138, 0.45);
           display: grid;
           place-items: center;
           font-size: 26px;
-          box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
           flex-shrink: 0;
         }
         .emblem-badge {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 3px;
         }
-        .emblem-badge span:first-child {
-          font-size: 14px;
-          font-weight: 800;
-          letter-spacing: 0.06em;
+        .emblem-motto {
+          font-size: 15px;
+          font-weight: 850;
+          letter-spacing: 0.07em;
           color: #fef08a;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          line-height: 1.25;
         }
         .emblem-sub {
           font-size: 9.5px;
-          letter-spacing: 0.12em;
-          color: rgba(255, 255, 255, 0.85);
-          font-weight: 700;
+          letter-spacing: 0.14em;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 750;
         }
 
         .portal-main-title {
-          font-size: 21px;
-          font-weight: 800;
-          line-height: 1.35;
+          font-size: 21.5px;
+          font-weight: 850;
+          line-height: 1.36;
           margin: 0 0 6px;
           color: #ffffff;
-          letter-spacing: -0.01em;
+          letter-spacing: -0.015em;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
         }
         .portal-sub-title {
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.82);
+          font-size: 12.5px;
+          color: rgba(255, 255, 255, 0.88);
           margin: 0 0 16px;
           line-height: 1.5;
           font-weight: 500;
@@ -537,28 +539,30 @@ export const LoginScreen = () => {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          padding: 7px 14px;
+          padding: 7px 15px;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.14);
-          border: 1px solid rgba(255, 255, 255, 0.22);
-          font-size: 11.5px;
-          font-weight: 650;
-          color: rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.24);
+          font-size: 11px;
+          font-weight: 700;
+          color: #ffffff;
           line-height: 1.4;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          backdrop-filter: blur(8px);
         }
         .ministry-pill .dot {
           width: 7px;
           height: 7px;
           border-radius: 50%;
           background: #4ade80;
-          box-shadow: 0 0 8px #4ade80;
+          box-shadow: 0 0 10px #4ade80;
         }
 
         .features-stack {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          margin: 12px 0;
+          gap: 10px;
+          margin: 8px 0;
         }
         .feature-item {
           display: flex;
@@ -566,36 +570,41 @@ export const LoginScreen = () => {
           gap: 12px;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 14px;
-          padding: 11px 14px;
-          transition: background 0.2s ease;
+          border-radius: 12px;
+          padding: 10px 14px;
+          transition: background 0.2s ease, transform 0.2s ease;
+          backdrop-filter: blur(6px);
         }
         .feature-item:hover {
-          background: rgba(255, 255, 255, 0.13);
+          background: rgba(255, 255, 255, 0.14);
+          transform: translateX(2px);
         }
         .feature-icon {
-          font-size: 18px;
+          font-size: 17px;
           flex-shrink: 0;
           margin-top: 1px;
         }
         .feature-title {
-          font-size: 12.5px;
-          font-weight: 700;
+          font-size: 12px;
+          font-weight: 750;
           color: #ffffff;
         }
         .feature-desc {
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.78);
+          font-size: 10.5px;
+          color: rgba(255, 255, 255, 0.8);
           margin-top: 2px;
           line-height: 1.35;
         }
 
+        /* Developer Credits - Canva Card pinned to the very bottom */
         .developer-box {
-          background: rgba(0, 0, 0, 0.26);
-          border: 1px solid rgba(255, 255, 255, 0.16);
+          margin-top: auto;
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 27, 75, 0.55) 100%);
+          border: 1.5px solid rgba(254, 240, 138, 0.35);
           border-radius: 16px;
           padding: 14px 18px;
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
         }
         .dev-header {
           display: flex;
@@ -603,9 +612,32 @@ export const LoginScreen = () => {
           gap: 6px;
           font-size: 9.5px;
           font-weight: 800;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.12em;
           color: #fde047;
           margin-bottom: 5px;
+          text-transform: uppercase;
+        }
+        .dev-header .sparkle {
+          font-size: 12px;
+          color: #fde047;
+          filter: drop-shadow(0 0 4px rgba(253, 224, 71, 0.6));
+        }
+        .dev-author {
+          font-size: 13.5px;
+          color: #f8fafc;
+          line-height: 1.45;
+          font-weight: 600;
+        }
+        .dev-author strong {
+          color: #ffffff;
+          font-weight: 850;
+          letter-spacing: 0.01em;
+        }
+        .dev-office {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.82);
+          margin-top: 3px;
+          line-height: 1.4;
         }
         .dev-author {
           font-size: 13px;
