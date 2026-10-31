@@ -15,7 +15,12 @@ export function getCurrentQuarterYear(reports) {
   return { quarter: sorted[0].quarter, year: sorted[0].year };
 }
 
-const num = (v) => parseFloat(v) || 0;
+export function normalizeDigits(str) {
+  if (!str) return '';
+  return String(str).replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
+}
+
+const num = (v) => parseFloat(normalizeDigits(v)) || 0;
 
 export function validateReport(data, { showPart2 = false } = {}) {
   const errors = [];
@@ -26,7 +31,7 @@ export function validateReport(data, { showPart2 = false } = {}) {
   }
   if (!data.officerPhone || data.officerPhone.trim() === '') {
     errors.push("कृपया संबंधित अधिकारी का फोन नंबर भरें।");
-  } else if (!/^[0-9+\-\s()]{7,15}$/.test(data.officerPhone.trim())) {
+  } else if (!/^[0-9+\-\s()०-९]{7,15}$/.test(data.officerPhone.trim())) {
     errors.push("कृपया वैध फोन नंबर भरें (7 से 15 अंक)।");
   }
   if (!data.officerEmail || data.officerEmail.trim() === '') {

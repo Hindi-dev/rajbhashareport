@@ -19,54 +19,6 @@ export const RoleDashboard = ({ reports, user, setView, sections = [] }) => {
 
   return (
     <div className="stack">
-      {/* Prominent Developer Credit & Official Branding Hero Banner */}
-      <section className="card" style={{
-        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%)",
-        color: "#ffffff",
-        border: "1px solid rgba(255,255,255,0.14)",
-        boxShadow: "0 10px 25px -5px rgba(30, 27, 75, 0.35)",
-        padding: "18px 22px"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{
-              width: 50, height: 50, borderRadius: 12,
-              background: "rgba(255, 255, 255, 0.16)",
-              display: "grid", placeItems: "center", fontSize: 26,
-              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.3)"
-            }}>
-              🏛️
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#a5b4fc", textTransform: "uppercase" }}>
-                राजभाषा विभाग · गृह मंत्रालय (संशोधित प्रारूप अप्रैल 2025)
-              </div>
-              <h1 style={{ fontSize: 17, fontWeight: 800, margin: "2px 0 4px", color: "#ffffff", lineHeight: 1.2 }}>
-                राजभाषा तिमाही प्रगति रिपोर्ट (QPR) पोर्टल
-              </h1>
-              <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.85)", fontWeight: 500 }}>
-                प्रधान निदेशक लेखापरीक्षा का कार्यालय, रेलवे, मुंबई
-              </div>
-            </div>
-          </div>
-
-          <div style={{
-            background: "rgba(255, 255, 255, 0.12)",
-            border: "1px solid rgba(255, 255, 255, 0.22)",
-            borderRadius: 10,
-            padding: "8px 14px",
-            maxWidth: 440
-          }}>
-            <div style={{ fontSize: 10, color: "#cbd5e1", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-              अभिकल्पना एवं विकास (Designer & Developer Credit)
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#f8fafc", marginTop: 2, lineHeight: 1.4 }}>
-              Designed and Developed by: Bharat Bhushan, Senior Translation Officer (STO), Office of the Principal Director of Audit (PDA), Railway, Mumbai.
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="card">
         <div className="card-head" style={{ background: r.grad }}>
           <h2 className="card-title" style={{ color: '#fff' }}>🔀 रिपोर्ट प्रवाह</h2>

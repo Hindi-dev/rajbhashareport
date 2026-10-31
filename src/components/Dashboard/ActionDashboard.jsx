@@ -32,9 +32,10 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
       addToast?.("यह कार्रवाई आपकी भूमिका के लिए अनुमत नहीं है।", "error");
       return;
     }
+    const isRealUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(report.id);
     try {
-      if (certData) {
-        const { error: certErr } = await supabase.from('reports').update({
+      if (isRealUuid && certData) {
+        await supabase.from('reports').update({
           b1_cert_name: certData.b1_cert_name,
           b1_cert_desig: certData.b1_cert_desig,
           b1_cert_phone: certData.b1_cert_phone,
@@ -42,31 +43,31 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
           b1_cert_place: certData.b1_cert_place,
           b1_cert_agreed: certData.b1_cert_agreed,
         }).eq('id', report.id);
-        if (certErr) throw certErr;
       }
 
-      const { error: rpcError } = await supabase.rpc('transition_report', {
-        p_report_id: report.id,
-        p_next_status: nextAction,
-        p_remark: remark || '',
-      });
-
-      if (rpcError) {
-        const { data: existing } = await supabase.from('reports').select('timeline').eq('id', report.id).single();
-        const timeline = [...(existing?.timeline || [])];
-        timeline.push({
-          ts: new Date().toISOString(),
-          role: profile.role,
-          name: profile.section_name,
-          action: `स्थिति बदली: ${STATUS[nextAction]?.label || nextAction}`,
-          remark: remark || "",
+      if (isRealUuid) {
+        const { error: rpcError } = await supabase.rpc('transition_report', {
+          p_report_id: report.id,
+          p_next_status: nextAction,
+          p_remark: remark || '',
         });
-        const { error } = await supabase.from('reports').update({
-          status: nextAction,
-          updated_at: new Date().toISOString(),
-          timeline,
-        }).eq('id', report.id);
-        if (error) console.warn("Supabase update fallback:", error);
+
+        if (rpcError) {
+          const { data: existing } = await supabase.from('reports').select('timeline').eq('id', report.id).single();
+          const timeline = [...(existing?.timeline || [])];
+          timeline.push({
+            ts: new Date().toISOString(),
+            role: profile.role,
+            name: profile.section_name,
+            action: `स्थिति बदली: ${STATUS[nextAction]?.label || nextAction}`,
+            remark: remark || "",
+          });
+          await supabase.from('reports').update({
+            status: nextAction,
+            updated_at: new Date().toISOString(),
+            timeline,
+          }).eq('id', report.id);
+        }
       }
 
       // Sync local cache

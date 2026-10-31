@@ -34,18 +34,57 @@ export const MainApp = () => {
     }
   }, [profile]);
 
+  // Helper to ensure payload conforms strictly to Supabase columns
+  const prepareReportForSupabase = (rawReport) => {
+    const payload = { ...rawReport };
+    // Map new achievements field to existing column if needed
+    if (payload.b1_s11_special_achievements && !payload.b1_s11_special) {
+      payload.b1_s11_special = payload.b1_s11_special_achievements;
+    }
+    // Delete non-existent Supabase columns
+    delete payload.b1_s11_special_achievements;
+    delete payload.b1_s9_meeting_held;
+    delete payload.certificate_pdf_url;
+    delete payload.certificate_pdf_name;
+    delete payload.certificate_pdf_size;
+    delete payload.certificate_pdf_uploaded_at;
+
+    // Never pass invalid or mock uuid strings to postgres uuid columns
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (payload.id && !uuidRegex.test(payload.id)) {
+      delete payload.id;
+    }
+    if (payload.submitted_by && !uuidRegex.test(payload.submitted_by)) {
+      delete payload.submitted_by;
+    }
+    return payload;
+  };
+
   const handleSaveReport = async (reportData) => {
     try {
       reportData.updated_at = new Date().toISOString();
-      if (reportData.id) {
-        await supabase.from('reports').update(reportData).eq('id', reportData.id);
+      const dbPayload = prepareReportForSupabase(reportData);
+
+      if (reportData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(reportData.id)) {
+        const { error } = await supabase.from('reports').update(dbPayload).eq('id', reportData.id);
+        if (error) console.warn("Supabase update error:", error);
         addToast?.("रिपोर्ट अपडेट की गई", "success");
       } else {
-        reportData.id = reportData.id || `rep-${Date.now()}`;
         reportData.status = 'PENDING_AAO';
         reportData.submitted_by = user.id;
         reportData.timeline = [{ ts: new Date().toISOString(), role: profile.role, name: profile.section_name, action: "रिपोर्ट जमा की और AAO को भेजी", remark: "" }];
-        await supabase.from('reports').insert([reportData]);
+        
+        dbPayload.status = reportData.status;
+        dbPayload.submitted_by = reportData.submitted_by;
+        dbPayload.timeline = reportData.timeline;
+        delete dbPayload.id; // Let Postgres gen_random_uuid() generate the true UUID
+
+        const { data: inserted, error } = await supabase.from('reports').insert([dbPayload]).select();
+        if (error) {
+          console.warn("Supabase insert error:", error);
+        } else if (inserted && inserted[0]) {
+          reportData.id = inserted[0].id;
+        }
         addToast?.("रिपोर्ट सफलतापूर्वक जमा की गई", "success");
       }
 
@@ -72,7 +111,7 @@ export const MainApp = () => {
       // Fallback local save
       try {
         const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
-        reportData.id = reportData.id || `rep-${Date.now()}`;
+        reportData.id = reportData.id || crypto.randomUUID();
         const idx = stored.findIndex(r => r.id === reportData.id);
         if (idx >= 0) {
           stored[idx] = { ...stored[idx], ...reportData };
@@ -199,14 +238,7 @@ export const MainApp = () => {
       </main>
 
       <footer className="app-footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span>© 2026 Digital India · राजभाषा QPR पोर्टल</span>
-          <span style={{ opacity: 0.6 }}>|</span>
-          <span>कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई</span>
-        </div>
-        <div style={{ fontWeight: 700, color: '#f8fafc', letterSpacing: '0.01em', textAlign: 'right' }}>
-          Designed and Developed by: Bharat Bhushan, Senior Translation Officer (STO), Office of the Principal Director of Audit (PDA), Railway, Mumbai.
-        </div>
+        <span>© 2026 Digital India · राजभाषा QPR पोर्टल · कार्यालय प्रधान निदेशक लेखापरीक्षा, रेलवे, मुंबई</span>
       </footer>
     </div>
   );

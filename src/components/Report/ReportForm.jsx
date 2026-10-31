@@ -594,7 +594,7 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], defaul
             <Grid cols={3}>
               <Inp
                 label={t.part9Phone}
-                value={data.b1_cert_phone || data.officerPhone}
+                value={data.b1_cert_phone !== undefined && data.b1_cert_phone !== "" ? data.b1_cert_phone : (data.officerPhone || "")}
                 onChange={v => set("b1_cert_phone", v)}
                 placeholder="दूरभाष / मोबाइल"
               />

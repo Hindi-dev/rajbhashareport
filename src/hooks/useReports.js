@@ -6,7 +6,7 @@ const STORAGE_REPORTS_KEY = 'rajbhasha_reports_cache';
 
 const SAMPLE_REPORTS = [
   {
-    id: 'rep-001',
+    id: 'a0000001-0001-4000-8000-000000000001',
     ackId: 'RAJ-2026-ADM',
     section_name: 'प्रशासन अनुभाग',
     region: 'ख',
@@ -67,7 +67,7 @@ const SAMPLE_REPORTS = [
     ]
   },
   {
-    id: 'rep-002',
+    id: 'a0000002-0002-4000-8000-000000000002',
     ackId: 'RAJ-2026-ACC',
     section_name: 'लेखा अनुभाग',
     region: 'ख',
@@ -121,7 +121,7 @@ const SAMPLE_REPORTS = [
     ]
   },
   {
-    id: 'rep-003',
+    id: 'a0000003-0003-4000-8000-000000000003',
     ackId: 'RAJ-2026-EST',
     section_name: 'स्थापना अनुभाग',
     region: 'ख',

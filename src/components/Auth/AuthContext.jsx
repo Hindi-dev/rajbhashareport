@@ -9,14 +9,14 @@ export const DEMO_ACCOUNTS = {
     email: 'deo@railway.gov.in',
     password: 'password123',
     role: 'DEO',
-    user: { id: 'demo-deo-001', email: 'deo@railway.gov.in' },
+    user: { id: '2d09c8eb-f06d-4700-ac77-846cca03e516', email: 'deo@railway.gov.in' },
     profile: {
-      id: 'demo-deo-001',
+      id: '2d09c8eb-f06d-4700-ac77-846cca03e516',
       email: 'deo@railway.gov.in',
       full_name: 'श्री राजेश कुमार (डाटा एंट्री ऑपरेटर)',
       role: 'DEO',
-      section_name: 'प्रशासन अनुभाग',
-      mapped_section: 'प्रशासन अनुभाग',
+      section_name: 'प्रशासन मुख्यालय',
+      mapped_section: 'प्रशासन मुख्यालय',
       designation: 'वरिष्ठ लिपिक / DEO',
       phone: '022-22001122'
     }
@@ -25,14 +25,14 @@ export const DEMO_ACCOUNTS = {
     email: 'aao@railway.gov.in',
     password: 'password123',
     role: 'AAO',
-    user: { id: 'demo-aao-002', email: 'aao@railway.gov.in' },
+    user: { id: 'bb835eb8-4d65-4e11-9f98-594a208275d3', email: 'aao@railway.gov.in' },
     profile: {
-      id: 'demo-aao-002',
+      id: 'bb835eb8-4d65-4e11-9f98-594a208275d3',
       email: 'aao@railway.gov.in',
       full_name: 'श्री सुनील शर्मा (AAO)',
       role: 'AAO',
-      section_name: 'प्रशासन अनुभाग',
-      mapped_section: 'प्रशासन अनुभाग',
+      section_name: 'प्रशासन मुख्यालय',
+      mapped_section: 'प्रशासन मुख्यालय',
       designation: 'सहायक लेखापरीक्षा अधिकारी (AAO)',
       phone: '022-22003344'
     }
@@ -41,14 +41,14 @@ export const DEMO_ACCOUNTS = {
     email: 'sao@railway.gov.in',
     password: 'password123',
     role: 'SAO',
-    user: { id: 'demo-sao-003', email: 'sao@railway.gov.in' },
+    user: { id: '335991f9-eda0-43e5-816d-2f6a3843912e', email: 'sao@railway.gov.in' },
     profile: {
-      id: 'demo-sao-003',
+      id: '335991f9-eda0-43e5-816d-2f6a3843912e',
       email: 'sao@railway.gov.in',
       full_name: 'श्री अनिल मेहता (SAO)',
       role: 'SAO',
-      section_name: 'प्रशासन अनुभाग',
-      mapped_section: 'प्रशासन अनुभाग',
+      section_name: 'प्रशासन मुख्यालय',
+      mapped_section: 'प्रशासन मुख्यालय',
       designation: 'वरिष्ठ लेखापरीक्षा अधिकारी (SAO)',
       phone: '022-22005566'
     }
@@ -57,9 +57,9 @@ export const DEMO_ACCOUNTS = {
     email: 'hindi@railway.gov.in',
     password: 'password123',
     role: 'HINDI_CELL',
-    user: { id: 'demo-hindi-004', email: 'hindi@railway.gov.in' },
+    user: { id: '6cf14d71-4ce1-4b86-ba8c-ea36e412f3a5', email: 'hindi@railway.gov.in' },
     profile: {
-      id: 'demo-hindi-004',
+      id: '6cf14d71-4ce1-4b86-ba8c-ea36e412f3a5',
       email: 'hindi@railway.gov.in',
       full_name: 'श्री भारत भूषण (वरिष्ठ अनुवाद अधिकारी)',
       role: 'HINDI_CELL',
