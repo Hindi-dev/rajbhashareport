@@ -13,13 +13,10 @@ const verifyPdfMagicBytes = (file) => {
         if (!e.target || !e.target.result) {
           return resolve(false);
         }
-        const arr = new Uint8Array(e.target.result).subarray(0, 4);
-        let header = "";
-        for (let i = 0; i < arr.length; i++) {
-          header += arr[i].toString(16);
-        }
-        // '%PDF' in hex is '25504446'
-        const isPdf = header.toLowerCase() === "25504446";
+        const arr = new Uint8Array(e.target.result);
+        if (arr.length < 4) return resolve(false);
+        // '%PDF' magic bytes: 0x25, 0x50, 0x44, 0x46
+        const isPdf = arr[0] === 0x25 && arr[1] === 0x50 && arr[2] === 0x44 && arr[3] === 0x46;
         resolve(isPdf);
       } catch (err) {
         reject(err);
@@ -34,10 +31,14 @@ const verifyPdfMagicBytes = (file) => {
  * Sanitizes the filename by removing illegal characters, path traversals, and non-ASCII chars
  */
 const sanitizeFilename = (filename) => {
-  return filename
+  const base = filename
     .replace(/[^a-zA-Z0-9._-]/g, '_')
     .replace(/\.+/g, '.')
     .replace(/^_+|_+$/g, '');
+  if (!base || base === '.' || base === 'pdf') {
+    return 'signed_certificate.pdf';
+  }
+  return base.endsWith('.pdf') ? base : `${base}.pdf`;
 };
 
 export const PdfCertificateUploader = ({
@@ -116,8 +117,18 @@ export const PdfCertificateUploader = ({
       let finalUrl = '';
       if (uploadError) {
         console.warn("Storage bucket upload note:", uploadError.message);
-        // Fallback: create an object URL or simulated path if storage bucket doesn't exist yet
-        finalUrl = URL.createObjectURL(file);
+        // Fallback: create a persistent Data URL so PDF preview persists across reloads in demo mode
+        try {
+          const dataUrl = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+          finalUrl = dataUrl;
+        } catch (e) {
+          finalUrl = URL.createObjectURL(file);
+        }
       } else {
         const { data: publicData } = supabase.storage
           .from('qpr-certificates')

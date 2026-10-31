@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Inp, Grid } from './UIComponents';
 
-export const CertificateModal = ({ report, onConfirm, onCancel }) => {
+export const CertificateModal = ({ report = {}, onConfirm, onCancel }) => {
   const [cert, setCert] = useState({
     b1_cert_name: report.b1_cert_name || "",
     b1_cert_desig: report.b1_cert_desig || "",
     b1_cert_phone: report.b1_cert_phone || "",
-    b1_cert_date: report.b1_cert_date || "",
-    b1_cert_place: report.b1_cert_place || "",
+    b1_cert_date: report.b1_cert_date || new Date().toISOString().split('T')[0],
+    b1_cert_place: report.b1_cert_place || "मुंबई",
     b1_cert_agreed: report.b1_cert_agreed || false,
   });
   const setC = (k, v) => setCert(c => ({ ...c, [k]: v }));

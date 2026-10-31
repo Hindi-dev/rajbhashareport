@@ -14,17 +14,43 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
   const [search, setSearch] = useState("");
   const [showCertModal, setShowCertModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const r = ROLES[profile.role] || ROLES.DEO;
+  const r = ROLES[profile?.role] || ROLES.DEO;
 
-  const inboxStatuses = INBOX_STATUSES[profile.role];
+  const inboxStatuses = INBOX_STATUSES[profile?.role];
   const myReports = reports.filter(rep => {
-    if (profile.role !== 'HINDI_CELL' && rep.section_name !== profile.section_name) return false;
+    if (!profile) return false;
+    if (profile.role === 'DEO') {
+      if (profile.section_name && profile.section_name !== 'सभी अनुभाग' && rep.section_name !== profile.section_name) {
+        return false;
+      }
+      return true;
+    }
+    if (profile.role === 'AAO' || profile.role === 'SAO') {
+      // Headquarters / supervising officers review all section submissions
+      if (
+        profile.section_name &&
+        profile.section_name !== 'सभी अनुभाग' &&
+        profile.section_name !== 'प्रशासन मुख्यालय' &&
+        profile.section_name !== 'मुख्यालय' &&
+        rep.section_name !== profile.section_name
+      ) {
+        return false;
+      }
+      return true;
+    }
     if (inboxStatuses && !inboxStatuses.includes(rep.status)) {
-      if (profile.role === 'DEO') return true;
       return false;
     }
     return true;
-  }).filter(x => !search || x.section_name?.includes(search) || x.ackId?.includes(search) || String(x.year).includes(search));
+  }).filter(x => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (x.section_name || '').toLowerCase().includes(q) ||
+      (x.ackId || '').toLowerCase().includes(q) ||
+      String(x.year || '').includes(q)
+    );
+  });
 
   const handleStatusChange = async (report, nextAction, certData = null) => {
     const allowed = workflowActionsFor(profile.role, report.status).some(btn => btn.action === nextAction);
@@ -77,6 +103,9 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
         if (idx >= 0) {
           stored[idx].status = nextAction;
           stored[idx].updated_at = new Date().toISOString();
+          if (certData) {
+            Object.assign(stored[idx], certData);
+          }
           stored[idx].timeline = [...(stored[idx].timeline || []), {
             ts: new Date().toISOString(),
             role: profile.role,
@@ -112,7 +141,9 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
   };
 
   const renderTimeline = (timeline) => {
-    if (!timeline || timeline.length === 0) return <p style={{ color: 'var(--ink-3)', fontSize: 13, margin: 0 }}>कोई ऑडिट ट्रेल उपलब्ध नहीं है।</p>;
+    if (!timeline || timeline.length === 0) {
+      return <p style={{ color: 'var(--ink-3)', fontSize: 13, margin: 0 }}>कोई ऑडिट ट्रेल उपलब्ध नहीं है।</p>;
+    }
     return (
       <div className="audit-timeline">
         {timeline.map((entry, idx) => (
@@ -184,7 +215,11 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
         </section>
 
         {showCertModal && (
-          <CertificateModal report={selected} onConfirm={(cert) => handleStatusChange(pendingAction.report, pendingAction.action, cert)} onCancel={() => { setShowCertModal(false); setPendingAction(null); }} />
+          <CertificateModal
+            report={selected || pendingAction?.report || {}}
+            onConfirm={(cert) => handleStatusChange(pendingAction.report, pendingAction.action, cert)}
+            onCancel={() => { setShowCertModal(false); setPendingAction(null); }}
+          />
         )}
       </div>
     );
@@ -194,8 +229,8 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
       <section className="card">
         <div className="card-head" style={{ background: r.grad || r.color }}>
-          <h2 className="card-title" style={{ color: "#fff" }}>{profile.role === "DEO" ? "📋 मेरी रिपोर्टें" : "📥 आवक रिपोर्टें"}</h2>
-          {profile.role === 'DEO' && (
+          <h2 className="card-title" style={{ color: "#fff" }}>{profile?.role === "DEO" ? "📋 मेरी रिपोर्टें" : "📥 आवक रिपोर्टें"}</h2>
+          {profile?.role === 'DEO' && (
             <button type="button" className="btn btn-light btn-sm" onClick={() => setView('form')}>+ नई रिपोर्ट</button>
           )}
         </div>
@@ -206,8 +241,8 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
 
         {myReports.length === 0 ? (
           <div className="empty">
-            <div className="empty-icon">{profile.role === "DEO" ? "📂" : "📭"}</div>
-            <div className="empty-text">{profile.role === "DEO" ? "अभी तक कोई रिपोर्ट नहीं।" : "अभी कोई रिपोर्ट प्रतीक्षा में नहीं।"}</div>
+            <div className="empty-icon">{profile?.role === "DEO" ? "📂" : "📭"}</div>
+            <div className="empty-text">{profile?.role === "DEO" ? "अभी तक कोई रिपोर्ट नहीं।" : "अभी कोई रिपोर्ट प्रतीक्षा में नहीं।"}</div>
           </div>
         ) : (
           <div>
@@ -216,7 +251,7 @@ export const ActionDashboard = ({ reports, onEdit, setView, onPrint, onRefetch }
               const c = SECTION_COLORS[i % SECTION_COLORS.length];
               const needsAction = canActOnReport(profile.role, rep) || (ACTION_STATUSES[profile.role] || []).includes(rep.status);
               return (
-                <div key={rep.id} className="list-row" onClick={() => setSelected(rep)}>
+                <div key={rep.id || rep.ackId || i} className="list-row" onClick={() => setSelected(rep)}>
                   <div className="list-avatar" style={{ background: c.bg, border: `1.5px solid ${c.border}`, color: c.text }}>
                     {(rep.section_name || "?").slice(0, 1)}
                   </div>

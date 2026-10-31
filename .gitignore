@@ -7,8 +7,7 @@ dist/
 .vscode/
 .idea/
 *.bak
+*.backup
+*.original
 .vercel
 .env*
-.env.local
-node_modules/
-dist/

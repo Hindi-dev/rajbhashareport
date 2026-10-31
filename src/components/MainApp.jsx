@@ -19,35 +19,37 @@ import { useToast } from './Common/Toast';
 export const MainApp = () => {
   const { user, profile, signOut, loading } = useAuth();
   const { reports, loading: reportsLoading, refetch } = useReports();
-  const { sections, loading: sectionsLoading } = useSections();
-  const [view, setView] = useState('inbox');
-  const viewInitialised = React.useRef(false);
+  const { sections, loading: sectionsLoading, addSection, deleteSection } = useSections();
+  const [view, setView] = useState('dashboard');
+  const viewInitialisedRole = React.useRef(null);
   const [editingReport, setEditingReport] = useState(null);
   const [selectedSections, setSelectedSections] = useState([]);
   const [printReport, setPrintReport] = useState(null);
   const { addToast } = useToast();
 
   React.useEffect(() => {
-    if (profile && !viewInitialised.current) {
-      viewInitialised.current = true;
-      setView(profile.role === 'DEO' ? 'form' : 'dashboard');
+    if (profile) {
+      if (viewInitialisedRole.current !== profile.role) {
+        viewInitialisedRole.current = profile.role;
+        setView(profile.role === 'DEO' ? 'form' : 'dashboard');
+      }
+    } else {
+      viewInitialisedRole.current = null;
     }
   }, [profile]);
 
-  // Helper to ensure payload conforms strictly to Supabase columns
+  // Helper to ensure payload conforms strictly to Supabase columns and schema.sql
   const prepareReportForSupabase = (rawReport) => {
     const payload = { ...rawReport };
     // Map new achievements field to existing column if needed
     if (payload.b1_s11_special_achievements && !payload.b1_s11_special) {
       payload.b1_s11_special = payload.b1_s11_special_achievements;
     }
-    // Delete non-existent Supabase columns
-    delete payload.b1_s11_special_achievements;
-    delete payload.b1_s9_meeting_held;
-    delete payload.certificate_pdf_url;
-    delete payload.certificate_pdf_name;
-    delete payload.certificate_pdf_size;
-    delete payload.certificate_pdf_uploaded_at;
+    // Also provide snake_case versions for schema.sql compatibility
+    if (payload.ackId && !payload.ack_id) payload.ack_id = payload.ackId;
+    if (payload.officeNameAddress && !payload.office_name_address) payload.office_name_address = payload.officeNameAddress;
+    if (payload.officerPhone && !payload.officer_phone) payload.officer_phone = payload.officerPhone;
+    if (payload.officerEmail && !payload.officer_email) payload.officer_email = payload.officerEmail;
 
     // Never pass invalid or mock uuid strings to postgres uuid columns
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -63,26 +65,40 @@ export const MainApp = () => {
   const handleSaveReport = async (reportData) => {
     try {
       reportData.updated_at = new Date().toISOString();
+      const isExistingUuid = reportData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(reportData.id);
+
+      if (!reportData.id) {
+        reportData.id = crypto.randomUUID();
+      }
+
       const dbPayload = prepareReportForSupabase(reportData);
 
-      if (reportData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(reportData.id)) {
+      if (isExistingUuid) {
         const { error } = await supabase.from('reports').update(dbPayload).eq('id', reportData.id);
         if (error) console.warn("Supabase update error:", error);
         addToast?.("रिपोर्ट अपडेट की गई", "success");
       } else {
-        reportData.status = 'PENDING_AAO';
+        reportData.status = reportData.status || 'PENDING_AAO';
         reportData.submitted_by = user.id;
-        reportData.timeline = [{ ts: new Date().toISOString(), role: profile.role, name: profile.section_name, action: "रिपोर्ट जमा की और AAO को भेजी", remark: "" }];
+        if (!reportData.timeline || reportData.timeline.length === 0) {
+          reportData.timeline = [{
+            ts: new Date().toISOString(),
+            role: profile.role,
+            name: profile.section_name,
+            action: "रिपोर्ट जमा की और AAO को भेजी",
+            remark: ""
+          }];
+        }
         
         dbPayload.status = reportData.status;
         dbPayload.submitted_by = reportData.submitted_by;
         dbPayload.timeline = reportData.timeline;
-        delete dbPayload.id; // Let Postgres gen_random_uuid() generate the true UUID
+        delete dbPayload.id; // Let Postgres gen_random_uuid() generate or preserve
 
         const { data: inserted, error } = await supabase.from('reports').insert([dbPayload]).select();
         if (error) {
           console.warn("Supabase insert error:", error);
-        } else if (inserted && inserted[0]) {
+        } else if (inserted && inserted[0] && inserted[0].id) {
           reportData.id = inserted[0].id;
         }
         addToast?.("रिपोर्ट सफलतापूर्वक जमा की गई", "success");
@@ -112,7 +128,7 @@ export const MainApp = () => {
       try {
         const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
         reportData.id = reportData.id || crypto.randomUUID();
-        const idx = stored.findIndex(r => r.id === reportData.id);
+        const idx = stored.findIndex(r => r.id === reportData.id || r.ackId === reportData.ackId);
         if (idx >= 0) {
           stored[idx] = { ...stored[idx], ...reportData };
         } else {
@@ -137,13 +153,29 @@ export const MainApp = () => {
 
   const handleDeleteReport = async (id) => {
     try {
-      const { error } = await supabase.from('reports').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabase.from('reports').delete().eq('id', id);
+        if (error) console.warn("Supabase delete note:", error);
+      } catch (e) {
+        console.warn("Supabase delete error:", e);
+      }
+      // Always sync local cache
+      try {
+        const stored = JSON.parse(localStorage.getItem('rajbhasha_reports_cache') || '[]');
+        const updated = stored.filter(r => r.id !== id);
+        localStorage.setItem('rajbhasha_reports_cache', JSON.stringify(updated));
+      } catch (e) {}
       addToast?.("रिपोर्ट हटा दी गई", "success");
       refetch();
     } catch (err) {
       addToast?.(err.message || "हटाने में त्रुटि", "error");
     }
+  };
+
+  const handleSignOut = () => {
+    viewInitialisedRole.current = null;
+    setView('dashboard');
+    signOut();
   };
 
   if (loading || reportsLoading || (profile && sectionsLoading)) {
@@ -195,7 +227,7 @@ export const MainApp = () => {
 
         <div className="nav-user">
           <div className="nav-chip">{roleTheme.icon} {profile.section_name || roleTheme.label}</div>
-          <button type="button" className="btn-signout" onClick={signOut}>बाहर</button>
+          <button type="button" className="btn-signout" onClick={handleSignOut}>बाहर</button>
         </div>
       </nav>
 
@@ -203,8 +235,10 @@ export const MainApp = () => {
         {view === 'dashboard' && <RoleDashboard reports={reports} user={profile} setView={setView} sections={sections} />}
         {view === 'form' && (
           <ReportForm
+            key={editingReport?.id || 'new-report'}
             initialData={editingReport}
             reports={reports}
+            sections={sections}
             onSave={handleSaveReport}
             onCancel={() => { setView('inbox'); setEditingReport(null); }}
           />
@@ -216,6 +250,7 @@ export const MainApp = () => {
           <HindiCellDashboard
             reports={reports}
             sections={sections}
+            onAddSection={addSection}
             selectedSections={selectedSections}
             onSelectSections={setSelectedSections}
             onConsolidate={() => setView('consolidated')}
@@ -233,7 +268,14 @@ export const MainApp = () => {
           />
         )}
         {view === 'master' && isHindiCell && (
-          <MasterControl reports={reports} onEdit={handleEdit} onRefetch={refetch} />
+          <MasterControl
+            reports={reports}
+            sections={sections}
+            onAddSection={addSection}
+            onDeleteSection={deleteSection}
+            onEdit={handleEdit}
+            onRefetch={refetch}
+          />
         )}
       </main>
 

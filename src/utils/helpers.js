@@ -1,4 +1,4 @@
-import { QUARTERS } from '../constants/constants';
+import { QUARTERS } from '../constants/constants.js';
 
 export function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -7,12 +7,12 @@ export function formatDate(dateStr) {
 
 export function getCurrentQuarterYear(reports) {
   if (!reports || reports.length === 0) return { quarter: "Q4", year: "2026" };
-  const sorted = [...reports].sort((a,b) => {
-    if (a.year !== b.year) return b.year - a.year;
-    const qOrder = { Q1:1, Q2:2, Q3:3, Q4:4 };
-    return qOrder[b.quarter] - qOrder[a.quarter];
+  const sorted = [...reports].sort((a, b) => {
+    if (String(a.year) !== String(b.year)) return Number(b.year) - Number(a.year);
+    const qOrder = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
+    return (qOrder[b.quarter] || 0) - (qOrder[a.quarter] || 0);
   });
-  return { quarter: sorted[0].quarter, year: sorted[0].year };
+  return { quarter: sorted[0].quarter || "Q4", year: String(sorted[0].year || "2026") };
 }
 
 export function normalizeDigits(str) {
@@ -66,9 +66,9 @@ export function validateReport(data, { showPart2 = false } = {}) {
     errors.push(`भाग 4 (मूल पत्राचार): 'ग' क्षेत्र हेतु हिंदी+अंग्रेजी पत्रों का योग (${sum6Ga}) कुल पत्रों (${data.b1_s6_ga_total}) के बराबर होना चाहिए।`);
   }
 
-  // Part 5: File Notings validation
+  // Part 5: File Notings validation with float tolerance (0.01)
   const sum7 = num(data.b1_s7_hindi_pages) + num(data.b1_s7_eng_pages);
-  if (num(data.b1_s7_total_pages) > 0 && sum7 !== num(data.b1_s7_total_pages)) {
+  if (num(data.b1_s7_total_pages) > 0 && Math.abs(sum7 - num(data.b1_s7_total_pages)) > 0.01) {
     errors.push(`भाग 5 (फाइल टिप्पण): हिंदी+अंग्रेजी पृष्ठों का योग (${sum7}) कुल पृष्ठों (${data.b1_s7_total_pages}) के बराबर होना चाहिए।`);
   }
 

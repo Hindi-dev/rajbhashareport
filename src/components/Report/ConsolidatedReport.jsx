@@ -18,7 +18,7 @@ export const ConsolidatedReport = ({ reports = [], selectedSections = [], sectio
   );
 
   const periodReports = useMemo(
-    () => reports.filter(r => r.quarter === quarter && r.year === year && r.section_name),
+    () => reports.filter(r => r.quarter === quarter && String(r.year) === String(year) && r.section_name),
     [reports, quarter, year]
   );
 
@@ -27,14 +27,12 @@ export const ConsolidatedReport = ({ reports = [], selectedSections = [], sectio
     [periodReports]
   );
 
-  // Re-select sections whenever the period changes. For the period the dashboard
-  // selection was made in, honour those checkboxes; otherwise include everything.
+  // Re-select sections whenever the period changes or available sections update.
   useEffect(() => {
-    const useDashboardSelection = quarter === currentQuarter && year === currentYear && preselectedNames.length > 0;
+    const useDashboardSelection = quarter === currentQuarter && String(year) === String(currentYear) && preselectedNames.length > 0;
     const keep = useDashboardSelection ? preselectedNames : availableSections;
     setExcludedSections(availableSections.filter(name => !keep.includes(name)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quarter, year]);
+  }, [quarter, year, currentQuarter, currentYear, preselectedNames, availableSections]);
 
   const filteredReports = useMemo(
     () => periodReports.filter(r => !excludedSections.includes(r.section_name)),

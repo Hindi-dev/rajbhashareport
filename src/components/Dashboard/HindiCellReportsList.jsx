@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { STATUS, QUARTERS, YEARS } from '../../constants/constants';
 
-export const HindiCellReportsList = ({ reports, sections, onEdit, onDelete }) => {
+export const HindiCellReportsList = ({ reports = [], sections = [], onEdit, onDelete }) => {
   const [filters, setFilters] = useState({ section: '', status: '', quarter: '', year: '' });
 
   const handleFilterChange = (key, value) => {
@@ -9,10 +9,10 @@ export const HindiCellReportsList = ({ reports, sections, onEdit, onDelete }) =>
   };
 
   const filteredReports = reports.filter(r => {
-    if (filters.section && r.section_name.toLowerCase() !== filters.section.toLowerCase()) return false;
+    if (filters.section && (r.section_name || '').toLowerCase() !== filters.section.toLowerCase()) return false;
     if (filters.status && r.status !== filters.status) return false;
     if (filters.quarter && r.quarter !== filters.quarter) return false;
-    if (filters.year && r.year !== filters.year) return false;
+    if (filters.year && String(r.year) !== String(filters.year)) return false;
     return true;
   });
 
@@ -76,15 +76,15 @@ export const HindiCellReportsList = ({ reports, sections, onEdit, onDelete }) =>
                 </tr>
               </thead>
               <tbody>
-                {filteredReports.map(rep => {
+                {filteredReports.map((rep, idx) => {
                   const st = STATUS[rep.status] || { label: rep.status, bg: "#eee", color: "#333" };
                   return (
-                    <tr key={rep.id}>
+                    <tr key={rep.id || rep.ackId || idx}>
                       <td className="cell-strong">{rep.section_name}</td>
                       <td>{rep.quarter}</td>
                       <td>{rep.year}</td>
                       <td><span className="badge" style={{ background: st.bg, color: st.color }}>{st.label}</span></td>
-                      <td style={{ fontSize: 12.5 }}>{new Date(rep.updated_at).toLocaleString('hi-IN')}</td>
+                      <td style={{ fontSize: 12.5 }}>{rep.updated_at ? new Date(rep.updated_at).toLocaleString('hi-IN') : '-'}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button type="button" className="btn btn-soft btn-sm" onClick={() => onEdit(rep)}>✏️ एडिट</button>

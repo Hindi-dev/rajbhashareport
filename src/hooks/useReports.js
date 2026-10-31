@@ -4,6 +4,9 @@ import { supabase } from '../supabaseClient';
 
 const STORAGE_REPORTS_KEY = 'rajbhasha_reports_cache';
 
+// Valid minimal 1-page sample PDF as a base64 Data URI for demo reports
+const SAMPLE_CERT_PDF_DATA_URI = "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNSAwIFIKPj4KPj4KPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0xlbmd0aCAxMTUKPj4Kc3RyZWFtCkJUCi9GMSAxOCBUZgoxMDAgNzAwIFRECihoYXN0YWtzaGFyaXQgUHJhbWFuLVBhdHJhIC0gUmFqYmhhc2hhIFFQUikgVGoKMCAtdjIwIFRECihoYXBwcm92ZWQgYW5kIFZlcmlmaWVkKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwKL1R5cGUgL1ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTggMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAowMDAwMDAwMTI1IDAwMDAwIG4gCjAwMDAwMDAyNDcgMDAwMDAgbiAKMDAwMDAwMDQxNiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjUwNAolJUVPRgo=";
+
 const SAMPLE_REPORTS = [
   {
     id: 'a0000001-0001-4000-8000-000000000001',
@@ -57,7 +60,7 @@ const SAMPLE_REPORTS = [
     b1_cert_date: '2026-03-31',
     b1_cert_place: 'मुंबई',
     b1_cert_agreed: true,
-    certificate_pdf_url: '#',
+    certificate_pdf_url: SAMPLE_CERT_PDF_DATA_URI,
     certificate_pdf_name: 'signed_certificate_adm_q4.pdf',
     certificate_pdf_size: 245000,
     updated_at: '2026-03-31T10:00:00Z',
@@ -110,7 +113,7 @@ const SAMPLE_REPORTS = [
     b1_cert_date: '2026-03-30',
     b1_cert_place: 'मुंबई',
     b1_cert_agreed: true,
-    certificate_pdf_url: '#',
+    certificate_pdf_url: SAMPLE_CERT_PDF_DATA_URI,
     certificate_pdf_name: 'signed_certificate_acc_q4.pdf',
     certificate_pdf_size: 310000,
     updated_at: '2026-03-31T12:00:00Z',
@@ -164,7 +167,7 @@ const SAMPLE_REPORTS = [
     b1_cert_date: '2026-03-29',
     b1_cert_place: 'मुंबई',
     b1_cert_agreed: true,
-    certificate_pdf_url: '#',
+    certificate_pdf_url: SAMPLE_CERT_PDF_DATA_URI,
     certificate_pdf_name: 'signed_certificate_est_q4.pdf',
     certificate_pdf_size: 280000,
     updated_at: '2026-03-31T15:00:00Z',
@@ -177,6 +180,15 @@ const SAMPLE_REPORTS = [
   }
 ];
 
+const normalizeReport = (r) => ({
+  ...r,
+  ackId: r.ackId || r.ack_id,
+  officeNameAddress: r.officeNameAddress || r.office_name_address,
+  officerPhone: r.officerPhone || r.officer_phone,
+  officerEmail: r.officerEmail || r.officer_email,
+  b1_s11_special_achievements: r.b1_s11_special_achievements || r.b1_s11_special || "",
+});
+
 export function useReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -185,13 +197,31 @@ export function useReports() {
   const getCachedReports = () => {
     try {
       const stored = localStorage.getItem(STORAGE_REPORTS_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {
       // ignore
     }
     localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(SAMPLE_REPORTS));
     return SAMPLE_REPORTS;
   };
+
+  const filterByRole = useCallback((rawList) => {
+    if (!profile) return rawList;
+    if (
+      profile.role === 'HINDI_CELL' ||
+      profile.section_name === 'सभी अनुभाग' ||
+      profile.section_name === 'प्रशासन मुख्यालय' ||
+      !profile.section_name
+    ) {
+      return rawList;
+    }
+    const section = profile.mapped_section || profile.section_name;
+    const filtered = rawList.filter(r => r.section_name === section);
+    return filtered.length > 0 ? filtered : rawList;
+  }, [profile]);
 
   const fetchReports = useCallback(async () => {
     if (!user || !profile) {
@@ -202,10 +232,16 @@ export function useReports() {
 
     try {
       let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
-      if (profile.role !== 'HINDI_CELL') {
+      if (
+        profile.role !== 'HINDI_CELL' &&
+        profile.section_name &&
+        profile.section_name !== 'सभी अनुभाग' &&
+        profile.section_name !== 'प्रशासन मुख्यालय'
+      ) {
         const section = profile.mapped_section || profile.section_name;
         query = query.eq('section_name', section);
       }
+
       // Race against a 3-second timeout to avoid hanging on unreachable Supabase
       const QUERY_TIMEOUT = 3000;
       const timeoutPromise = new Promise((_, reject) =>
@@ -213,26 +249,21 @@ export function useReports() {
       );
       const { data, error } = await Promise.race([query, timeoutPromise]);
       if (!error && data && data.length > 0) {
-        setReports(data);
-        localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(data));
+        const normalized = data.map(normalizeReport);
+        setReports(normalized);
+        localStorage.setItem(STORAGE_REPORTS_KEY, JSON.stringify(normalized));
       } else {
         // Fallback to cache / demo reports filtered by role
         const cached = getCachedReports();
-        if (profile.role === 'HINDI_CELL') {
-          setReports(cached);
-        } else {
-          const section = profile.mapped_section || profile.section_name;
-          const filtered = cached.filter(r => r.section_name === section);
-          setReports(filtered.length > 0 ? filtered : cached);
-        }
+        setReports(filterByRole(cached));
       }
     } catch (err) {
       const cached = getCachedReports();
-      setReports(cached);
+      setReports(filterByRole(cached));
     } finally {
       setLoading(false);
     }
-  }, [user, profile]);
+  }, [user, profile, filterByRole]);
 
   useEffect(() => {
     fetchReports();

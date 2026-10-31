@@ -6,14 +6,19 @@ import { Inp, Num, Radio, SecCard, Grid, TblInput } from '../Common/UIComponents
 import { PdfCertificateUploader } from './PdfCertificateUploader';
 import { translations } from '../../utils/i18n';
 
-export const ReportForm = ({ initialData, onSave, onCancel, reports = [], defaultLang = 'hi' }) => {
+export const ReportForm = ({ initialData, onSave, onCancel, reports = [], sections = [], defaultLang = 'hi' }) => {
   const { profile } = useAuth();
   const [lang, setLang] = useState(defaultLang);
   const t = translations[lang] || translations.hi;
 
   const [data, setData] = useState(() => {
     const base = initialData || { ...EMPTY_FORM, ackId: genId() };
-    return { ...EMPTY_FORM, ...base, section_name: base.section_name || profile?.section_name || "" };
+    const defaultSec = base.section_name || (profile?.section_name && profile.section_name !== 'सभी अनुभाग' ? profile.section_name : (sections[0]?.section_name || ""));
+    const merged = { ...EMPTY_FORM, ...base, section_name: defaultSec };
+    if (!merged.b1_cert_phone && merged.officerPhone) merged.b1_cert_phone = merged.officerPhone;
+    if (!merged.b1_cert_date) merged.b1_cert_date = new Date().toISOString().split('T')[0];
+    if (!merged.b1_cert_place) merged.b1_cert_place = "मुंबई";
+    return merged;
   });
 
   const [step, setStep] = useState(0);
@@ -40,8 +45,8 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], defaul
   const certStepIndex = totalSteps - 2;
 
   const alreadySubmitted = !initialData && reports.some(r =>
-    r.section_name === (data.section_name || profile?.section_name) &&
-    r.year === data.year &&
+    (r.section_name || '').trim() === (data.section_name || profile?.section_name || '').trim() &&
+    String(r.year) === String(data.year) &&
     r.quarter === data.quarter &&
     r.status !== "AAO_RETURNED" &&
     r.status !== "SAO_RETURNED"
@@ -249,9 +254,35 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], defaul
                 options={["क", "ख", "ग"]}
               />
             </Grid>
-            <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 8 }}>
-              पावती संख्या (Ack ID): <strong style={{ color: "var(--ink-2)" }}>{data.ackId}</strong> · अनुभाग: <strong style={{ color: "var(--ink-2)" }}>{data.section_name}</strong>
-            </div>
+            <Grid cols={2}>
+              <div className="field">
+                <label className="field-label">{lang === 'hi' ? "संबंधित अनुभाग (Reporting Section)" : "Reporting Section"}</label>
+                <select
+                  className="select"
+                  value={data.section_name || ""}
+                  onChange={e => set("section_name", e.target.value)}
+                  disabled={Boolean(initialData) || (profile?.role === 'DEO' && Boolean(profile?.section_name && profile.section_name !== 'सभी अनुभाग'))}
+                >
+                  {sections.map(s => (
+                    <option key={s.id} value={s.section_name}>{s.section_name}</option>
+                  ))}
+                  {data.section_name && !sections.some(s => s.section_name === data.section_name) && (
+                    <option value={data.section_name}>{data.section_name}</option>
+                  )}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">{lang === 'hi' ? "पावती संख्या (Ack ID)" : "Ack ID"}</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={data.ackId}
+                  readOnly
+                  disabled
+                  style={{ background: 'var(--surface-2)', fontFamily: 'monospace', fontWeight: 700 }}
+                />
+              </div>
+            </Grid>
           </SecCard>
 
           {alreadySubmitted && (
@@ -594,19 +625,19 @@ export const ReportForm = ({ initialData, onSave, onCancel, reports = [], defaul
             <Grid cols={3}>
               <Inp
                 label={t.part9Phone}
-                value={data.b1_cert_phone !== undefined && data.b1_cert_phone !== "" ? data.b1_cert_phone : (data.officerPhone || "")}
+                value={data.b1_cert_phone || ""}
                 onChange={v => set("b1_cert_phone", v)}
                 placeholder="दूरभाष / मोबाइल"
               />
               <Inp
                 type="date"
                 label={t.part9Date}
-                value={data.b1_cert_date || new Date().toISOString().split('T')[0]}
+                value={data.b1_cert_date || ""}
                 onChange={v => set("b1_cert_date", v)}
               />
               <Inp
                 label={t.part9Place}
-                value={data.b1_cert_place || "मुंबई"}
+                value={data.b1_cert_place || ""}
                 onChange={v => set("b1_cert_place", v)}
                 placeholder="स्थान"
               />

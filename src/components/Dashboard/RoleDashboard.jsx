@@ -4,9 +4,16 @@ import { WorkflowPipeline } from './WorkflowPipeline';
 
 export const RoleDashboard = ({ reports, user, setView, sections = [] }) => {
   const r = ROLES[user.role] || ROLES.DEO;
-  const myReports = user.role === 'HINDI_CELL'
+  const myReports = (
+    user.role === 'HINDI_CELL' ||
+    user.section_name === 'सभी अनुभाग' ||
+    !user.section_name ||
+    user.section_name === 'प्रशासन मुख्यालय' ||
+    user.section_name === 'मुख्यालय'
+  )
     ? reports
     : reports.filter(x => x.section_name === user.section_name);
+
   const pendingStatuses = ACTION_STATUSES[user.role] || [];
   const pendingForMe = myReports.filter(x => pendingStatuses.includes(x.status)).length;
   const approved = myReports.filter(x => x.status === "SUBMITTED").length;
@@ -20,7 +27,7 @@ export const RoleDashboard = ({ reports, user, setView, sections = [] }) => {
   return (
     <div className="stack">
       <section className="card">
-        <div className="card-head" style={{ background: r.grad }}>
+        <div className="card-head" style={{ background: r.grad || r.color }}>
           <h2 className="card-title" style={{ color: '#fff' }}>🔀 रिपोर्ट प्रवाह</h2>
           <span className="badge" style={{ background: 'rgba(255,255,255,0.22)', color: '#fff' }}>{r.icon} {r.label}</span>
         </div>

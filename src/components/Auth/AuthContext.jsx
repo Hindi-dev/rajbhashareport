@@ -15,8 +15,8 @@ export const DEMO_ACCOUNTS = {
       email: 'deo@railway.gov.in',
       full_name: 'श्री राजेश कुमार (डाटा एंट्री ऑपरेटर)',
       role: 'DEO',
-      section_name: 'प्रशासन मुख्यालय',
-      mapped_section: 'प्रशासन मुख्यालय',
+      section_name: 'प्रशासन अनुभाग',
+      mapped_section: 'प्रशासन अनुभाग',
       designation: 'वरिष्ठ लिपिक / DEO',
       phone: '022-22001122'
     }
@@ -32,7 +32,7 @@ export const DEMO_ACCOUNTS = {
       full_name: 'श्री सुनील शर्मा (AAO)',
       role: 'AAO',
       section_name: 'प्रशासन मुख्यालय',
-      mapped_section: 'प्रशासन मुख्यालय',
+      mapped_section: 'सभी अनुभाग',
       designation: 'सहायक लेखापरीक्षा अधिकारी (AAO)',
       phone: '022-22003344'
     }
@@ -48,7 +48,7 @@ export const DEMO_ACCOUNTS = {
       full_name: 'श्री अनिल मेहता (SAO)',
       role: 'SAO',
       section_name: 'प्रशासन मुख्यालय',
-      mapped_section: 'प्रशासन मुख्यालय',
+      mapped_section: 'सभी अनुभाग',
       designation: 'वरिष्ठ लेखापरीक्षा अधिकारी (SAO)',
       phone: '022-22005566'
     }
